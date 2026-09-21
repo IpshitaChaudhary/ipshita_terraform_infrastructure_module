@@ -1,0 +1,56 @@
+# Copy this file to terraform.tfvars and fill in your own environment's
+# values. Never commit your real terraform.tfvars - it's in .gitignore.
+
+aws_region  = "us-east-2"
+aws_profile = "" # leave empty to use the default provider credential chain
+
+vpc_id = "vpc-xxxxxxxxxxxxxxxxx"
+public_subnet_ids = [
+  "subnet-xxxxxxxxxxxxxxxxx",
+  "subnet-xxxxxxxxxxxxxxxxx",
+  "subnet-xxxxxxxxxxxxxxxxx",
+]
+
+private_subnet_ids = [
+  "subnet-xxxxxxxxxxxxxxxxx",
+  "subnet-xxxxxxxxxxxxxxxxx",
+  "subnet-xxxxxxxxxxxxxxxxx",
+]
+
+acm_certificate_arn       = "arn:aws:acm:us-east-2:xxxxxxxxxxxx:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+https_listener_ssl_policy = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+
+ecs_task_execution_role_name = "ecsTaskExecutionRole"
+ecs_task_role_name           = "ecsTaskRole"
+
+name_prefix = "myapp-dev"
+
+ecs_cluster_name     = "myapp-dev-cluster"
+alb_name             = "myapp-dev-alb"
+backend_task_family  = "myapp-dev-backend"
+frontend_task_family = "myapp-dev-frontend"
+
+instance_type = "t3.medium"
+key_name      = "" # optional - leave empty if you only need SSM Session Manager access
+
+capacity_asg_min_size         = 1
+capacity_asg_max_size         = 2
+capacity_asg_desired_capacity = 1
+
+backend_repository_name  = "myapp-backend"
+frontend_repository_name = "myapp-frontend"
+
+backend_container_image    = "xxxxxxxxxxxx.dkr.ecr.us-east-2.amazonaws.com/myapp-backend:latest"
+backend_container_port     = 3000
+backend_memory_reservation = 1024
+backend_desired_count      = 1
+backend_host_header        = "backend.dev.example.com"
+
+# Leave empty to skip wiring in a Secrets Manager secret entirely.
+backend_secret_name = ""
+
+frontend_container_image    = "xxxxxxxxxxxx.dkr.ecr.us-east-2.amazonaws.com/myapp-frontend:latest"
+frontend_container_port     = 4200
+frontend_memory_reservation = 768
+frontend_desired_count      = 1
+frontend_host_header        = "frontend.dev.example.com"
