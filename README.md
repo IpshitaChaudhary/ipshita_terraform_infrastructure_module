@@ -1,8 +1,10 @@
 # ipshita_terraform_infrastructure_module
 
-Reusable, sanitized Terraform modules for common infrastructure patterns. Each top-level folder is a self-contained module for one piece of infrastructure - `ecs/` is the first one, more (EKS, etc.) will be added as siblings over time.
+Reusable, sanitized Terraform modules for common infrastructure patterns. Each top-level folder is a self-contained module for one piece of infrastructure - `aws/` is the first one, more (EKS, etc.) will be added as siblings over time.
 
-## `ecs/` - AWS ECS on EC2 capacity, with an ALB in front
+## `aws/` - AWS ECS on EC2 capacity, with an ALB in front
+
+More building-block modules (VPC, IAM, route tables, security groups, ...) will be added under `aws/Modules/` over time, alongside the ECS-specific ones already there.
 
 Stands up a small, self-contained ECS setup for a typical two-service app (a backend API and a frontend web app), running on EC2-launch-type capacity behind an Application Load Balancer.
 
@@ -26,7 +28,7 @@ The module assumes you already have a VPC, subnets, an ACM certificate, and the 
 ### Repository layout
 
 ```
-ecs/
+aws/
 ├── main.tf, variables.tf, outputs.tf, locals.tf, providers.tf
 ├── terraform.tfvars.example
 └── Modules/
@@ -51,7 +53,7 @@ Before running this module, you need (all existing, referenced by the module, ne
 ### Usage
 
 ```bash
-cd ecs
+cd aws
 cp terraform.tfvars.example terraform.tfvars
 # edit terraform.tfvars with your real VPC/subnet/cert/image values
 
