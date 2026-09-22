@@ -61,3 +61,14 @@ terraform apply
 ```
 
 Once applied, `terraform output alb_dns_name` gives you the ALB's DNS name - point your `backend_host_header` and `frontend_host_header` domains at it (as an alias/CNAME) and the listener rules will route each to the right service.
+
+### What each root file does
+
+| File | Purpose |
+|---|---|
+| `providers.tf` | Declares the `aws` provider and the required Terraform/provider versions. Deliberately uses local state - fork this into your own project and pick your own backend. |
+| `variables.tf` | Every input variable: existing-resource references (VPC/subnets/cert/roles/ECR), naming, EC2 capacity sizing, and backend/frontend service config. Most have sensible generic defaults; the environment-specific ones (VPC, subnets, cert, images) have no default and must be supplied. |
+| `locals.tf` | Turns `backend_secret_env_names` into the `{name, valueFrom}` shape the ECS task definition's `secrets` block expects - one entry per key in the backend's Secrets Manager secret. |
+| `main.tf` | Wires all the submodules together: security groups → optional secrets → capacity → load balancer → the two ECS services. This is the file that turns the inputs into an actual running stack. |
+| `outputs.tf` | The values you'll actually want after `apply`: ALB DNS name, cluster name, both service names, and both ECR repository URLs. |
+| `terraform.tfvars.example` | Every variable with clearly-fake placeholder values - copy to `terraform.tfvars` and fill in your real environment. |
