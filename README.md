@@ -72,3 +72,20 @@ Once applied, `terraform output alb_dns_name` gives you the ALB's DNS name - poi
 | `main.tf` | Wires all the submodules together: security groups → optional secrets → capacity → load balancer → the two ECS services. This is the file that turns the inputs into an actual running stack. |
 | `outputs.tf` | The values you'll actually want after `apply`: ALB DNS name, cluster name, both service names, and both ECR repository URLs. |
 | `terraform.tfvars.example` | Every variable with clearly-fake placeholder values - copy to `terraform.tfvars` and fill in your real environment. |
+
+### What each submodule does
+
+| Module | Creates | Notes |
+|---|---|---|
+| `security` | ALB security group (80/443 ingress, open egress) and a capacity-instance security group (all ports from the ALB SG only, open egress) | No inbound SSH port at all - pairs with SSM Session Manager access from `capacity` |
+| `secrets` | An IAM role policy granting `secretsmanager:GetSecretValue` + `kms:Decrypt` on one existing secret | Only created when `backend_secret_name` is set (`main.tf` makes it conditional via `count`) - fully optional |
+| `capacity` | IAM instance role/profile, EC2 launch template, Auto Scaling Group, ECS capacity provider | AMI is resolved live via SSM (`/aws/service/ecs/optimized-ami/...`), never hardcoded, so it can't silently go stale |
+| `ecr` | Nothing - two `data` lookups for existing repos, by name | Never manages the repos, so `apply` can't touch or recreate them |
+| `ecs-service` | CloudWatch log group, ECS task definition, ECS service | Generic on purpose - the same module is instantiated twice in `main.tf`, once for backend and once for frontend |
+| `loadbalancer` | ALB, two target groups, HTTP→HTTPS redirect listener, HTTPS listener with host-header rules | Frontend is the default action (site root); backend only matches on its specific host header |
+
+### A few things worth knowing
+
+- **EC2 launch type, not Fargate.** Both services share the same capacity instances via ECS's dynamic host-port mapping (bridge networking, left implicit on purpose). This bin-packs multiple containers onto one instance, which is usually cheaper than one Fargate task per service at low/moderate traffic - just make sure the instance type is actually sized for what you're running on it.
+- **No hard cpu/memory limits** are set on the task definitions - only a soft `memoryReservation` per container. This is intentional for a shared-capacity setup; add hard limits yourself if you need strict isolation between containers on the same instance.
+- **Secrets are opt-in.** Leave `backend_secret_name` empty and the whole `secrets` module and its IAM policy are skipped - useful if you're not ready to wire up Secrets Manager yet.
