@@ -37,3 +37,27 @@ ecs/
     ├── ecs-service/    - generic ECS task definition + service (used for both apps)
     └── loadbalancer/   - ALB, target groups, listeners, host-header routing rules
 ```
+
+### Prerequisites
+
+Before running this module, you need (all existing, referenced by the module, never created by it):
+
+- A VPC, with at least one public subnet (for the ALB) and one private subnet (for the ECS capacity instances).
+- An ACM certificate covering the domain(s) you'll route through the ALB.
+- The standard `ecsTaskExecutionRole` and `ecsTaskRole` IAM roles.
+- ECR repositories for your backend and frontend container images (or point `backend_container_image` / `frontend_container_image` at any registry your capacity instances can pull from).
+- Optionally, a Secrets Manager secret already created and populated for the backend, if you want secrets injected into the container at launch instead of plain env vars.
+
+### Usage
+
+```bash
+cd ecs
+cp terraform.tfvars.example terraform.tfvars
+# edit terraform.tfvars with your real VPC/subnet/cert/image values
+
+terraform init
+terraform plan
+terraform apply
+```
+
+Once applied, `terraform output alb_dns_name` gives you the ALB's DNS name - point your `backend_host_header` and `frontend_host_header` domains at it (as an alias/CNAME) and the listener rules will route each to the right service.
