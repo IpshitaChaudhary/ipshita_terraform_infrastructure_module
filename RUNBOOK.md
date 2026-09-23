@@ -35,3 +35,19 @@ Take the `alb_dns_name` output and point your domain(s) at it (as a DNS alias/CN
 4. `terraform apply`.
 5. Watch the rollout: `aws ecs describe-services --cluster <cluster> --services <service> --query "services[0].deployments"` - wait for the new deployment to reach `PRIMARY` with `runningCount == desiredCount` before considering the deploy done.
 6. Hit the service's actual domain and confirm real traffic looks right (status code, page content) - a healthy ECS deployment doesn't guarantee the *application* is behaving correctly.
+
+## Rolling back
+
+**Bad container image (deployed, now misbehaving):**
+
+1. Revert `backend_container_image`/`frontend_container_image` in `terraform.tfvars` back to the last known-good tag.
+2. `terraform plan` - confirm it only touches the task definition/service, same as a routine deploy.
+3. `terraform apply`, then watch the rollout the same way as a deploy (step 5 above) - a rollback is just a deploy in the other direction, treat it with the same care, not as a panic button.
+
+**DNS/routing change made things worse (e.g. after switching which domain points where):**
+
+- Never make this kind of change without first writing down the exact previous DNS record (type, value, TTL) - that's your rollback target, and you should be able to restore it from memory/notes, not by reconstructing it under pressure.
+- Restoring is the same kind of change as the one that broke it (an UPSERT back to the prior value) - it is not more dangerous to revert than it was to change in the first place, so don't hesitate to do it immediately once something looks wrong.
+- After restoring, verify with a real request against the actual domain (not just checking the DNS record value) - a DNS record can be correct while the thing it points at is still unhealthy for an unrelated reason.
+
+**General principle:** always know your rollback target *before* making a change, not after something breaks. If you can't articulate what you'd revert to, you're not ready to make the change yet.
