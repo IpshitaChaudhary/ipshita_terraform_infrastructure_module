@@ -51,3 +51,22 @@ Take the `alb_dns_name` output and point your domain(s) at it (as a DNS alias/CN
 - After restoring, verify with a real request against the actual domain (not just checking the DNS record value) - a DNS record can be correct while the thing it points at is still unhealthy for an unrelated reason.
 
 **General principle:** always know your rollback target *before* making a change, not after something breaks. If you can't articulate what you'd revert to, you're not ready to make the change yet.
+
+## Troubleshooting
+
+**Service stuck with `runningCount < desiredCount` (tasks won't schedule):**
+- Check the capacity provider has room: `aws ecs describe-clusters` / the ASG's current instance count vs. what each task's `memoryReservation` needs. Two services bin-packed on undersized instances is the most common cause.
+- Check `aws ecs describe-services ... --query "services[0].events"` - ECS logs *why* it can't place a task (insufficient memory, no container instances, image pull failure) directly here.
+
+**ALB health checks failing (target group shows unhealthy):**
+- Confirm the container actually listens on `container_port` and the app's `/health` route (or whatever path the target group checks) returns 200 - a container that's "running" per ECS can still be failing its actual health check.
+- Check security groups: the ALB's security group must be allowed inbound to the capacity instances' security group, not just the reverse.
+
+**Requests reach the ALB but the app rejects them (e.g. a hostname/host-header error):**
+- If you've added or changed a domain routed through this ALB, check whether the *application itself* validates the incoming Host header (framework-level allowlists exist in some stacks, separate from anything this Terraform module or the ALB controls) - a healthy target group and a correct listener rule don't guarantee the app will accept every hostname pointed at it. Confirm the new hostname is actually allowed by the application before assuming the infrastructure is misconfigured.
+
+**Secrets not resolving in the running container:**
+- Confirm `backend_secret_name` matches the real secret name exactly, and that the keys in `backend_secret_env_names` exist in that secret - a typo'd key name fails silently at task launch (check the stopped-task's `stoppedReason` via `aws ecs describe-tasks`, not just the service events).
+
+**Deploy applied cleanly but nothing changed in the running app:**
+- Confirm the image tag in `terraform.tfvars` actually changed - reapplying the same tag doesn't force ECS to pull a fresh image or restart tasks, since the task definition itself is unchanged.
