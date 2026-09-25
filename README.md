@@ -37,8 +37,12 @@ aws/
     ├── capacity/       - EC2 launch template, ASG, ECS capacity provider
     ├── ecr/            - looks up existing ECR repos by name
     ├── ecs-service/    - generic ECS task definition + service (used for both apps)
-    └── loadbalancer/   - ALB, target groups, listeners, host-header routing rules
+    ├── loadbalancer/   - ALB, target groups, listeners, host-header routing rules
+    ├── vpc/            - VPC, public/private subnets, NAT gateway, route tables
+    └── iam/            - ECS task execution role + task role
 ```
+
+> **Note:** `vpc/` and `iam/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these two modules exist so you can create those prerequisites with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs is a manual step for now.
 
 ### Further reading
 
