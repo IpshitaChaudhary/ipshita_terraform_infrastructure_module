@@ -38,3 +38,15 @@ Instantiated twice (once for `backend`, once for `frontend`) by the root module.
 | `aws_cloudwatch_log_group` | Where the container's stdout/stderr ends up - one per service. |
 | `aws_ecs_task_definition` | The container spec: image, CPU/memory, port mappings, log driver config. |
 | `aws_ecs_service` | Keeps the desired count of tasks running on the cluster and registered with its target group. |
+
+## `Modules/secrets/` - optional secrets access
+
+Only created when the optional Secrets Manager wiring is enabled for the backend.
+
+| Resource | Purpose |
+|---|---|
+| `aws_iam_role_policy` (`read_backend_secret`) | Grants the backend's task execution role `secretsmanager:GetSecretValue` on exactly one secret ARN - not created if this feature isn't used. |
+
+## `Modules/ecr/` - existing image repos (no resources)
+
+This module creates nothing. It's `data "aws_ecr_repository"` lookups only, by name, for the backend and frontend repos - they're assumed to already exist (built/pushed elsewhere), so `terraform apply` can never touch or recreate them.
