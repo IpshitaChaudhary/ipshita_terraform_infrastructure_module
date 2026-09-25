@@ -1,0 +1,31 @@
+name: Terraform fmt & validate
+
+on:
+  push:
+    paths:
+      - "**/*.tf"
+  pull_request:
+    paths:
+      - "**/*.tf"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: terraform fmt (check only, no rewrite)
+        run: terraform fmt -check -recursive
+
+      - name: terraform init (backend-less, just to resolve providers/modules)
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        run: terraform validate
