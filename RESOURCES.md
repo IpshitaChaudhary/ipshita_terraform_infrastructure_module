@@ -28,3 +28,13 @@ A reference for exactly what this module provisions, grouped by submodule. This 
 | `aws_security_group` (x2: `alb`, `container_instances`) | One SG for the ALB, one for the EC2 container instances. |
 | `aws_vpc_security_group_ingress_rule` (x3) | ALB: allow 80 and 443 from the internet. Container instances: allow traffic only from the ALB's security group. |
 | `aws_vpc_security_group_egress_rule` (x2) | Unrestricted egress on both SGs (outbound to pull images, call APIs, etc.). |
+
+## `Modules/ecs-service/` - the app itself
+
+Instantiated twice (once for `backend`, once for `frontend`) by the root module.
+
+| Resource | Purpose |
+|---|---|
+| `aws_cloudwatch_log_group` | Where the container's stdout/stderr ends up - one per service. |
+| `aws_ecs_task_definition` | The container spec: image, CPU/memory, port mappings, log driver config. |
+| `aws_ecs_service` | Keeps the desired count of tasks running on the cluster and registered with its target group. |
