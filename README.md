@@ -40,6 +40,11 @@ aws/
     └── loadbalancer/   - ALB, target groups, listeners, host-header routing rules
 ```
 
+### Further reading
+
+- [`RESOURCES.md`](./RESOURCES.md) - the concrete AWS resource types this module creates, grouped by submodule. Useful for a cost/blast-radius review before pointing this at a real account.
+- [`RUNBOOK.md`](./RUNBOOK.md) - operational doc: pre-deploy checklist, deploy procedure, rollback, and troubleshooting.
+
 ### Prerequisites
 
 Before running this module, you need (all existing, referenced by the module, never created by it):
