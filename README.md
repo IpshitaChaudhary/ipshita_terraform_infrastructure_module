@@ -39,10 +39,15 @@ aws/
     ├── ecs-service/    - generic ECS task definition + service (used for both apps)
     ├── loadbalancer/   - ALB, target groups, listeners, host-header routing rules
     ├── vpc/            - VPC, public/private subnets, NAT gateway, route tables
-    └── iam/            - ECS task execution role + task role
+    ├── iam/            - ECS task execution role + task role
+    └── eks/            - EKS cluster, managed node group, OIDC provider for IRSA
 ```
 
-> **Note:** `vpc/` and `iam/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these two modules exist so you can create those prerequisites with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs is a manual step for now.
+> **Note:** `vpc/`, `iam/`, and `eks/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+
+### `eks/` - a second compute option, alongside the ECS-on-EC2 setup above
+
+The root module (and everything documented below it) runs on ECS with EC2 capacity. `eks/` is a separate, independent module for teams that would rather run the same kind of workload on Kubernetes instead - it stands up an EKS cluster, a managed node group, and an OIDC provider so pods can assume IAM roles directly (IRSA) instead of inheriting whatever the node's IAM role can do. It takes an existing VPC/subnets as input (e.g. from the `vpc/` module above) and doesn't touch ECS at all - pick one compute model or the other, this module doesn't assume you're using both.
 
 ### Further reading
 
