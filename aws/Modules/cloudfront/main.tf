@@ -15,7 +15,7 @@ resource "aws_cloudfront_distribution" "this" {
     domain_name = var.static_assets_bucket_regional_domain_name
 
     s3_origin_config {
-      origin_access_identity = var.origin_access_identity_path
+      origin_access_identity = aws_cloudfront_origin_access_identity.this.cloudfront_access_identity_path
     }
   }
 
@@ -37,13 +37,14 @@ resource "aws_cloudfront_distribution" "this" {
   # request reaches the origin fresh with full cookies/headers/query
   # strings - required for session/auth cookies to reach the backend.
   default_cache_behavior {
-    target_origin_id         = "alb-dynamic"
-    viewer_protocol_policy    = "redirect-to-https"
-    allowed_methods           = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
-    cached_methods            = ["HEAD", "GET", "OPTIONS"]
-    compress                  = true
-    cache_policy_id           = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
-    origin_request_policy_id  = "216adef6-5c7f-47e4-b989-5492eafa07d3" # Managed-AllViewer
+    target_origin_id           = "alb-dynamic"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+    cached_methods             = ["HEAD", "GET", "OPTIONS"]
+    compress                   = true
+    cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
+    origin_request_policy_id   = "216adef6-5c7f-47e4-b989-5492eafa07d3" # Managed-AllViewer
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
   }
 
   # Static assets -> S3, CachingOptimized. Managed-CORS-S3Origin only
@@ -53,14 +54,15 @@ resource "aws_cloudfront_distribution" "this" {
   dynamic "ordered_cache_behavior" {
     for_each = var.static_asset_path_patterns
     content {
-      path_pattern              = ordered_cache_behavior.value
-      target_origin_id          = "s3-static"
-      viewer_protocol_policy    = "redirect-to-https"
-      allowed_methods           = ["HEAD", "GET"]
-      cached_methods            = ["HEAD", "GET"]
-      compress                  = true
-      cache_policy_id           = "658327ea-f89d-4fab-a63d-7e88639e58f6" # Managed-CachingOptimized
-      origin_request_policy_id  = "b689b0a8-53d0-40ab-baf2-68738e2966ac" # Managed-CORS-S3Origin
+      path_pattern               = ordered_cache_behavior.value
+      target_origin_id           = "s3-static"
+      viewer_protocol_policy     = "redirect-to-https"
+      allowed_methods            = ["HEAD", "GET"]
+      cached_methods             = ["HEAD", "GET"]
+      compress                   = true
+      cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6" # Managed-CachingOptimized
+      origin_request_policy_id   = "b689b0a8-53d0-40ab-baf2-68738e2966ac" # Managed-CORS-S3Origin
+      response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
     }
   }
 

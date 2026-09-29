@@ -8,11 +8,6 @@ variable "static_assets_bucket_regional_domain_name" {
   type        = string
 }
 
-variable "origin_access_identity_path" {
-  description = "CloudFront origin access identity path (e.g. aws_cloudfront_origin_access_identity.this.cloudfront_access_identity_path) used to grant this distribution read access to the static assets bucket. OAI, not OAC - see main.tf for why."
-  type        = string
-}
-
 variable "alb_dns_name" {
   description = "DNS name of the existing ALB fronting the dynamic/SSR app - never created by this module."
   type        = string
