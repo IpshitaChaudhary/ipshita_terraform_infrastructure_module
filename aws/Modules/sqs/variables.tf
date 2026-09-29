@@ -36,3 +36,9 @@ variable "kms_master_key_id" {
   type        = string
   default     = null
 }
+
+variable "allowed_sender_arns" {
+  description = "ARNs (IAM roles/users, or an SNS topic ARN for a subscription) allowed to sqs:SendMessage to this queue. Leave empty (default) for no queue policy at all - never defaults to a public/wildcard policy, unlike several queues found with Principal:\"*\" in a real account audit."
+  type        = list(string)
+  default     = []
+}
