@@ -43,10 +43,11 @@ aws/
     ├── eks/            - EKS cluster, managed node group, OIDC provider for IRSA
     ├── route53/        - looks up an existing hosted zone, creates one alias record in it
     ├── cloudfront/     - CDN distribution with S3 (static) + ALB (dynamic) origins
-    └── sqs/            - queue with a dead-letter queue and encryption on by default
+    ├── sqs/            - queue with a dead-letter queue and encryption on by default
+    └── sns/            - topic with encryption and a scoped, opt-in policy
 ```
 
-> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, and `sqs/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, and `sns/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
 
 ### `eks/` - a second compute option, alongside the ECS-on-EC2 setup above
 
@@ -63,6 +64,10 @@ One distribution, two origins: an S3 bucket for static assets (`Managed-CachingO
 ### `sqs/` - a queue that's encrypted and bounded by default
 
 A main queue plus a dead-letter queue (on by default - a queue with no DLQ either silently drops or infinitely retries a poison message). Encrypted by default too, either SQS-managed SSE or a customer KMS key - never left plaintext. The queue policy is opt-in and scoped: pass `allowed_sender_arns` (an SNS topic ARN, an IAM role, etc.) and the module grants exactly `sqs:SendMessage` to exactly those ARNs on exactly this queue; leave it empty and no policy is created at all. This is deliberately the opposite of a `Principal:"*"` policy - a real account audit found queues with wildcard resource policies (publicly writable/readable by anyone), and encryption missing on several others.
+
+### `sns/` - a topic that's encrypted and scoped by default
+
+Same philosophy as `sqs/`: encrypted by default (AWS-managed `alias/aws/sns` key, or your own via `kms_master_key_id`), and the topic policy is opt-in and scoped - pass `allowed_publisher_arns`/`allowed_subscriber_arns` and the module grants exactly `sns:Publish`/`sns:Subscribe` to exactly those ARNs; leave both empty and no policy is created at all. A real account audit found several SNS topics with no KMS key set - this module never starts that way.
 
 ### Further reading
 
