@@ -20,3 +20,15 @@ variable "force_destroy" {
   type        = bool
   default     = false
 }
+
+variable "allowed_principal_arns" {
+  description = "ARNs (IAM roles/users, another AWS service principal, etc.) granted allowed_actions on this bucket. Leave empty (default) for no bucket policy at all - never defaults to a public/wildcard policy, unlike several real buckets found with Principal:\"*\" in two separate account audits."
+  type        = list(string)
+  default     = []
+}
+
+variable "allowed_actions" {
+  description = "S3 actions granted to allowed_principal_arns. Defaults to read-only - widen explicitly (e.g. add s3:PutObject) only when a principal genuinely needs write access."
+  type        = list(string)
+  default     = ["s3:GetObject"]
+}
