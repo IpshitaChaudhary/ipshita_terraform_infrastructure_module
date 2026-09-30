@@ -44,10 +44,11 @@ aws/
     ├── route53/        - looks up an existing hosted zone, creates one alias record in it
     ├── cloudfront/     - CDN distribution with S3 (static) + ALB (dynamic) origins
     ├── sqs/            - queue with a dead-letter queue and encryption on by default
-    └── sns/            - topic with encryption and a scoped, opt-in policy
+    ├── sns/            - topic with encryption and a scoped, opt-in policy
+    └── s3/             - bucket with public access blocked, versioned and encrypted by default
 ```
 
-> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, and `sns/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, and `s3/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
 
 ### `eks/` - a second compute option, alongside the ECS-on-EC2 setup above
 
@@ -68,6 +69,10 @@ A main queue plus a dead-letter queue (on by default - a queue with no DLQ eithe
 ### `sns/` - a topic that's encrypted and scoped by default
 
 Same philosophy as `sqs/`: encrypted by default (AWS-managed `alias/aws/sns` key, or your own via `kms_master_key_id`), and the topic policy is opt-in and scoped - pass `allowed_publisher_arns`/`allowed_subscriber_arns` and the module grants exactly `sns:Publish`/`sns:Subscribe` to exactly those ARNs; leave both empty and no policy is created at all. A real account audit found several SNS topics with no KMS key set - this module never starts that way.
+
+### `s3/` - a bucket that's private, versioned, and encrypted by default
+
+The single most important lesson baked into this whole repo: two separate real account audits (dev and prod) each found S3 buckets with a wildcard `Principal:"*"` policy and zero Public Access Block settings - actual customer data (receipts, support uploads) downloadable by anyone, no login required. Every bucket this module creates enables all 4 Public Access Block settings, versioning, and server-side encryption (SSE-S3 by default, or your own KMS key) from the start. The bucket policy is opt-in and scoped like `sqs/`/`sns/` - and even then, it's layered *under* the Public Access Block, not instead of it, so an accidentally-broad policy statement still can't make the bucket public. A caller who genuinely needs public access (which should almost never be the case - use CloudFront + OAI/OAC instead, see `cloudfront/`) has to explicitly override multiple settings, not just forget to set one.
 
 ### Further reading
 
