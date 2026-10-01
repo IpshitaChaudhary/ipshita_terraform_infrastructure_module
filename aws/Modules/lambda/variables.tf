@@ -8,3 +8,49 @@ variable "extra_execution_policy_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "handler" {
+  type = string
+}
+
+variable "runtime" {
+  type = string
+}
+
+variable "timeout" {
+  type    = number
+  default = 10
+}
+
+variable "memory_size" {
+  type    = number
+  default = 128
+}
+
+variable "filename" {
+  description = "Local path to the deployment package zip. Mutually exclusive with s3_bucket/s3_key - set exactly one source."
+  type        = string
+  default     = null
+}
+
+variable "s3_bucket" {
+  description = "S3 bucket holding the deployment package zip. Mutually exclusive with filename."
+  type        = string
+  default     = null
+}
+
+variable "s3_key" {
+  type    = string
+  default = null
+}
+
+variable "environment_variables" {
+  type    = map(string)
+  default = {}
+}
+
+variable "log_retention_days" {
+  description = "Lesson baked in from day one: Lambda's own auto-created log group has no expiration at all. 30 days is a reasonable default - override per function if compliance needs longer."
+  type        = number
+  default     = 30
+}
