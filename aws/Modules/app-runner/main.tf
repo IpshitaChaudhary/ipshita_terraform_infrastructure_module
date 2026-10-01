@@ -73,4 +73,25 @@ resource "aws_apprunner_service" "this" {
     memory            = var.memory
     instance_role_arn = aws_iam_role.instance.arn
   }
+
+  dynamic "network_configuration" {
+    for_each = length(var.vpc_connector_subnet_ids) > 0 ? [1] : []
+    content {
+      egress_configuration {
+        egress_type       = "VPC"
+        vpc_connector_arn = aws_apprunner_vpc_connector.this[0].arn
+      }
+    }
+  }
+
+  auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.this.arn
+
+  health_check_configuration {
+    protocol            = var.health_check_protocol
+    path                = var.health_check_path
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 1
+    unhealthy_threshold = 5
+  }
 }
