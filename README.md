@@ -46,10 +46,11 @@ aws/
     ├── sqs/            - queue with a dead-letter queue and encryption on by default
     ├── sns/            - topic with encryption and a scoped, opt-in policy
     ├── s3/             - bucket with public access blocked, versioned and encrypted by default
-    └── lambda/         - function with a least-privilege role and a locked-down function URL
+    ├── lambda/         - function with a least-privilege role and a locked-down function URL
+    └── app-runner/     - service with separate access/instance roles and optional private VPC egress
 ```
 
-> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, and `lambda/` are standalone modules, not yet wired into the root `main.tf`. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, and `app-runner/` are standalone modules, not yet wired into the root `main.tf`. This is also the last module on the original build list - see [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
 
 ### `eks/` - a second compute option, alongside the ECS-on-EC2 setup above
 
@@ -78,6 +79,10 @@ The single most important lesson baked into this whole repo: two separate real a
 ### `lambda/` - a function that's least-privilege and locked down by default
 
 The execution role only gets `AWSLambdaBasicExecutionRole` (write its own logs) by default - a real account audit found a Lambda role with wildcard `cognito-idp:*`/`sns:*` grants on `Resource:*` baked in as inline policies, far broader than the function actually needed. Anything beyond logging is added explicitly per caller via `extra_execution_policy_arns`, scoped to what that function actually touches. The log group is created explicitly too, with a real `log_retention_days` (30 by default) - Lambda's own auto-created group has no expiration at all. A function URL is opt-in (`enable_function_url`) and defaults to `AWS_IAM` auth when enabled - the same audit found a function URL with `AuthType: NONE`, publicly invocable by anyone who found or guessed it, live for years.
+
+### `app-runner/` - the last module on the original list
+
+Two separate IAM roles, not one: an access role (App Runner pulling from ECR) and an instance role (what the running application code itself can call) - folding both into one role would let application code assume ECR-pull permissions it never needs. The instance role is empty by default, same least-privilege philosophy as `lambda/`. A VPC connector is opt-in (`vpc_connector_subnet_ids`) - without one, App Runner can only reach the public internet, which is exactly the kind of pressure that pushes people toward exposing a database or cache publicly just so App Runner can reach it. Autoscaling has an explicit, bounded `autoscaling_max_size` (default 4) rather than being left unbounded, same reasoning as the capacity ASG modules' max size.
 
 ### Further reading
 
