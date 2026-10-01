@@ -54,3 +54,15 @@ variable "log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "enable_function_url" {
+  description = "Create a Lambda function URL. Defaults false - most functions are invoked via an event source (ALB, API Gateway, SQS, etc.), not a direct public URL."
+  type        = bool
+  default     = false
+}
+
+variable "function_url_auth_type" {
+  description = "Lesson from a real account audit: a function URL with AuthType NONE was found publicly invocable by anyone. Defaults to AWS_IAM - only set to NONE deliberately, for a genuine public webhook that does its own request validation."
+  type        = string
+  default     = "AWS_IAM"
+}
