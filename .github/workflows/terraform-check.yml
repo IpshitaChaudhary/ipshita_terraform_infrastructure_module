@@ -9,7 +9,7 @@ on:
       - "**/*.tf"
 
 jobs:
-  check:
+  check-root:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,6 +25,49 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: terraform init (backend-less, just to resolve providers/modules)
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        run: terraform validate
+
+  # The root module above only wires in capacity/ecr/ecs-service/loadbalancer/
+  # secrets/security, so `terraform validate` there never touches the other,
+  # standalone modules (vpc, iam, eks, route53, cloudfront, sqs, sns, s3,
+  # lambda, app-runner) - they'd never get validated at all otherwise. This
+  # job validates every module under aws/Modules/ independently.
+  check-modules:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - vpc
+          - iam
+          - eks
+          - route53
+          - cloudfront
+          - sqs
+          - sns
+          - s3
+          - lambda
+          - app-runner
+          - capacity
+          - ecr
+          - ecs-service
+          - loadbalancer
+          - secrets
+          - security
+    defaults:
+      run:
+        working-directory: aws/Modules/${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: terraform init (backend-less, just to resolve providers)
         run: terraform init -backend=false
 
       - name: terraform validate

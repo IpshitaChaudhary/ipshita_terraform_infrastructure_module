@@ -88,6 +88,7 @@ Two separate IAM roles, not one: an access role (App Runner pulling from ECR) an
 
 - [`RESOURCES.md`](./RESOURCES.md) - the concrete AWS resource types this module creates, grouped by submodule. Useful for a cost/blast-radius review before pointing this at a real account.
 - [`RUNBOOK.md`](./RUNBOOK.md) - operational doc: pre-deploy checklist, deploy procedure, rollback, and troubleshooting.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) - 5 reference patterns showing how the standalone `vpc`/`iam`/`eks`/`route53`/`cloudfront`/`sqs`/`sns`/`s3`/`lambda`/`app-runner` modules combine in practice.
 
 ### Prerequisites
 
