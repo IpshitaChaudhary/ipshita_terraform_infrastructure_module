@@ -2,6 +2,16 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-09-29
+
+- Added the `cloudfront/` module: CDN distribution with S3 and ALB origins, an origin access identity so the S3 origin stays private, and a security headers response policy.
+- Added the `sqs/` module: queue with an attached dead-letter queue and encryption by default.
+
+## 2026-09-28
+
+- Added the `eks/` module: cluster + node group IAM roles, the managed node group itself, and an OIDC provider so pod-level IAM (IRSA) works out of the box.
+- Added the `route53/` module: alias record against an existing hosted zone lookup (doesn't create the zone itself).
+
 ## 2026-09-25
 
 - Added a GitHub Actions workflow that runs `terraform fmt -check` and `terraform validate` on every push/PR touching a `.tf` file.
