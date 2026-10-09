@@ -2,6 +2,10 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-05 to 2026-10-07
+
+- Added a `versions.tf` to every module (`vpc`, `iam`, `eks`, `route53`, `cloudfront`, `sqs`, `sns`, `s3`, `lambda`, `app-runner`, `capacity`, `ecr`, `ecs-service`, `loadbalancer`, `secrets`, `security`) pinning the Terraform and AWS provider version constraints instead of leaving them implicit. Spread over three days, module by module.
+
 ## 2026-10-01
 
 - Added the `lambda` module's function resource, opt-in Function URL (AWS_IAM auth by default, never open/public), and outputs.
