@@ -2,6 +2,13 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-13
+
+- `ecs-service`: added `lifecycle.ignore_changes` on the task definition's `container_definitions` and the service's `task_definition`, once a real CI/CD pipeline owns deploys - without it, Terraform permanently fights every pipeline-driven deploy and a stray `apply` can roll a live service back to a stale image.
+- `loadbalancer`: added an optional, off-by-default attachment-only listener rule (`enable_internal_test_rule`) matched on a custom header - lets a brand-new target group satisfy ECS's "must already be attached to a listener" API requirement while standing up a second service in parallel, without risking real traffic on an ALB that's already serving production.
+- `RUNBOOK.md`: documented the infinite-redeploy-loop failure mode (a health check path itself getting rejected by an app-level guard, not just a real request) and how a pipeline execution stuck in that loop blocks a newer, already-fixed build from ever starting.
+- `README.md`/`RESOURCES.md`: cross-referenced both fixes above.
+
 ## 2026-10-05 to 2026-10-07
 
 - Added a `versions.tf` to every module (`vpc`, `iam`, `eks`, `route53`, `cloudfront`, `sqs`, `sns`, `s3`, `lambda`, `app-runner`, `capacity`, `ecr`, `ecs-service`, `loadbalancer`, `secrets`, `security`) pinning the Terraform and AWS provider version constraints instead of leaving them implicit. Spread over three days, module by module.
