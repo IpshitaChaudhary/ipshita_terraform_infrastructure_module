@@ -20,6 +20,7 @@ A reference for exactly what this module provisions, grouped by submodule. This 
 | `aws_lb_target_group` (x2: `backend`, `frontend`) | One target group per service - ECS registers tasks into these automatically. |
 | `aws_lb_listener` (x2: `http`, `https`) | HTTP listener (redirects to HTTPS) and the HTTPS listener that actually serves traffic. |
 | `aws_lb_listener_rule` (x2: `backend_host`, `frontend_host`) | Host-header rules on the HTTPS listener that route to the matching target group. |
+| `aws_lb_listener_rule.internal_test` (optional, `count`) | Custom-header-matched rule, off by default (`enable_internal_test_rule`). Satisfies ECS's listener-attachment requirement for a target group that shouldn't carry real traffic yet. |
 
 ## `Modules/security/` - security groups
 

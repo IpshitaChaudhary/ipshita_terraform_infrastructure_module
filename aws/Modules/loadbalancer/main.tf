@@ -111,3 +111,32 @@ resource "aws_lb_listener_rule" "frontend_host" {
     }
   }
 }
+
+# Optional - for standing up a NEW service in parallel next to a listener
+# that already carries real traffic, where adding a host/path-based rule for
+# it is too risky to do yet. ECS's CreateService API rejects a target group
+# with a load_balancer block unless that target group is already attached to
+# a listener ("does not have an associated load balancer") - so the target
+# group needs SOME rule to exist before the service can even be created, but
+# a real host/path condition would start intercepting live traffic the
+# moment it's applied. The fix: match on a custom HTTP header no real
+# client ever sends. It satisfies the API's attachment requirement while
+# staying provably unreachable by real traffic - test it by sending that
+# header explicitly, nothing else ever will.
+resource "aws_lb_listener_rule" "internal_test" {
+  count        = var.enable_internal_test_rule ? 1 : 0
+  listener_arn = aws_lb_listener.https.arn
+  priority     = var.internal_test_rule_priority
+
+  action {
+    type             = "forward"
+    target_group_arn = var.internal_test_target_group_arn
+  }
+
+  condition {
+    http_header {
+      http_header_name = var.internal_test_header_name
+      values           = [var.internal_test_header_value]
+    }
+  }
+}

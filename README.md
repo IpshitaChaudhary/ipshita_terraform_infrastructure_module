@@ -133,8 +133,8 @@ Once applied, `terraform output alb_dns_name` gives you the ALB's DNS name - poi
 | `secrets` | An IAM role policy granting `secretsmanager:GetSecretValue` + `kms:Decrypt` on one existing secret | Only created when `backend_secret_name` is set (`main.tf` makes it conditional via `count`) - fully optional |
 | `capacity` | IAM instance role/profile, EC2 launch template, Auto Scaling Group, ECS capacity provider | AMI is resolved live via SSM (`/aws/service/ecs/optimized-ami/...`), never hardcoded, so it can't silently go stale |
 | `ecr` | Nothing - two `data` lookups for existing repos, by name | Never manages the repos, so `apply` can't touch or recreate them |
-| `ecs-service` | CloudWatch log group, ECS task definition, ECS service | Generic on purpose - the same module is instantiated twice in `main.tf`, once for backend and once for frontend |
-| `loadbalancer` | ALB, two target groups, HTTP→HTTPS redirect listener, HTTPS listener with host-header rules | Frontend is the default action (site root); backend only matches on its specific host header |
+| `ecs-service` | CloudWatch log group, ECS task definition, ECS service | Generic on purpose - the same module is instantiated twice in `main.tf`, once for backend and once for frontend. Both the task definition's `container_definitions` and the service's `task_definition` are set to `ignore_changes` once a real CI/CD pipeline owns deploys, so Terraform stops fighting it |
+| `loadbalancer` | ALB, two target groups, HTTP→HTTPS redirect listener, HTTPS listener with host-header rules | Frontend is the default action (site root); backend only matches on its specific host header. `enable_internal_test_rule` adds an opt-in third rule matched on a custom header (never a real host/path) - lets a brand-new target group satisfy ECS's "must be attached to a listener" requirement without risking real traffic, for standing up a second service in parallel on an ALB that already serves production |
 
 ### A few things worth knowing
 
