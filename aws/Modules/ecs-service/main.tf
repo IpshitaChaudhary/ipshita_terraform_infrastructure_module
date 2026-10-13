@@ -39,6 +39,16 @@ resource "aws_ecs_task_definition" "this" {
       }
     }
   ])
+
+  # A real CI/CD pipeline (CodePipeline's ECS deploy action, GitHub Actions,
+  # etc.) registers its own task definition revisions on every deploy -
+  # Terraform can never know which revision is live at any moment. Without
+  # this, `plan` permanently fights the pipeline, and a stray `apply` quietly
+  # rolls the service back to whatever image this module last knew about.
+  # container_definitions here then only matters for a from-scratch apply.
+  lifecycle {
+    ignore_changes = [container_definitions]
+  }
 }
 
 resource "aws_ecs_service" "this" {
