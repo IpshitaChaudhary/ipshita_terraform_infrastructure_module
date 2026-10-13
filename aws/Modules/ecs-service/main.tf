@@ -69,4 +69,10 @@ resource "aws_ecs_service" "this" {
     container_name   = var.container_name
     container_port   = var.container_port
   }
+
+  # Same reason as the task definition's ignore_changes above - the pipeline
+  # updates the service to point at its new revision directly.
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
