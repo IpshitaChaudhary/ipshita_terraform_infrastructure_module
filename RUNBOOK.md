@@ -70,3 +70,9 @@ Take the `alb_dns_name` output and point your domain(s) at it (as a DNS alias/CN
 
 **Deploy applied cleanly but nothing changed in the running app:**
 - Confirm the image tag in `terraform.tfvars` actually changed - reapplying the same tag doesn't force ECS to pull a fresh image or restart tasks, since the task definition itself is unchanged.
+
+**New service deploys forever - new tasks keep starting, failing, and getting replaced, never reaching steady state:**
+- This is a more severe cousin of the host-header issue above: it's the target group's *health check path itself* getting rejected by the same kind of app-level guard (e.g. a framework's hostname allowlist), not a real user request. ECS considers every new task unhealthy, kills it, starts another, forever - `aws ecs describe-services` shows `rolloutState: IN_PROGRESS` indefinitely and the deployment never completes.
+- Confirm with `aws elbv2 describe-target-health` - look at the target's `reason`, not just `state`. A reason like a non-2xx status code on the health check path is the tell.
+- The fix belongs in the app, not the infrastructure: the health check route must respond before any such guard runs, since a health probe hits the target's own private IP/port, never a real domain - it can never satisfy a hostname allowlist.
+- If a stuck deployment from a previous (broken) build is blocking a newer, already-fixed build from even starting (CodePipeline won't advance a stage's next execution until the current one finishes, and a deployment stuck in this loop never finishes on its own), stop the stuck execution explicitly: `aws codepipeline stop-pipeline-execution --abandon`. The queued execution then proceeds automatically.
