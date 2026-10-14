@@ -68,3 +68,24 @@ variable "enable_execute_command" {
   type        = bool
   default     = false
 }
+
+# --- Application Auto Scaling (task count) - see autoscaling.tf. Separate
+# from, and upstream of, the EC2 Capacity Provider's own instance-count
+# scaling in Modules/capacity - without this, desired_count never moves on
+# its own, so a real traffic increase just degrades the existing tasks
+# instead of adding more. ---
+
+variable "cluster_name" {
+  description = "Plain cluster name (not ARN) - required for the appautoscaling resource_id and the CloudWatch alarm dimension."
+  type        = string
+}
+
+variable "autoscaling_min_capacity" {
+  type    = number
+  default = 2
+}
+
+variable "autoscaling_max_capacity" {
+  type    = number
+  default = 8
+}

@@ -68,6 +68,7 @@ module "backend_service" {
   family                 = var.backend_task_family
   service_name           = "${var.name_prefix}-backend-svc"
   cluster_id             = module.capacity.cluster_id
+  cluster_name           = module.capacity.cluster_name
   capacity_provider_name = module.capacity.capacity_provider_name
   execution_role_arn     = data.aws_iam_role.ecs_task_execution_role.arn
   task_role_arn          = data.aws_iam_role.ecs_task_role.arn
@@ -89,6 +90,7 @@ module "frontend_service" {
   family                 = var.frontend_task_family
   service_name           = "${var.name_prefix}-frontend-svc"
   cluster_id             = module.capacity.cluster_id
+  cluster_name           = module.capacity.cluster_name
   capacity_provider_name = module.capacity.capacity_provider_name
   execution_role_arn     = data.aws_iam_role.ecs_task_execution_role.arn
   task_role_arn          = data.aws_iam_role.ecs_task_role.arn
