@@ -2,6 +2,13 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-14
+
+- `ecs-service`: added an `ordered_placement_strategy` (spread by AZ, then by host) - `desired_count >= 2` previously didn't guarantee real redundancy; every replica could land on the same instance.
+- `ecs-service`: added Application Auto Scaling (`autoscaling.tf`) - task-count scaling via tiered CPU-based Step Scaling, separate from and upstream of the EC2 Capacity Provider's own instance-count scaling. Without it, real traffic growth had no automatic response at all.
+- `RUNBOOK.md`: documented two silent-failure modes found standing up parallel compute - a shared resource's own security group not trusting new compute by default, and a CDN not forwarding the real Host header to the origin (breaking both ALB host-header rules and app-level Host allowlists).
+- `README.md`/`RESOURCES.md`: cross-referenced all of the above.
+
 ## 2026-10-13
 
 - `ecs-service`: added `lifecycle.ignore_changes` on the task definition's `container_definitions` and the service's `task_definition`, once a real CI/CD pipeline owns deploys - without it, Terraform permanently fights every pipeline-driven deploy and a stray `apply` can roll a live service back to a stale image.

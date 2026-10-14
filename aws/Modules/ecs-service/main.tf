@@ -64,6 +64,21 @@ resource "aws_ecs_service" "this" {
     base              = 0
   }
 
+  # Without this, ECS's default scheduler can land every replica of this
+  # service on the same EC2 instance - observed happening in practice with
+  # desired_count = 2 and 2 capacity instances across 2 AZs: both tasks
+  # ended up on one host, so a single instance failure would have taken out
+  # the whole service despite desired_count implying redundancy. Spread by
+  # AZ first, then by host, so redundancy is guaranteed, not incidental.
+  ordered_placement_strategy {
+    type  = "spread"
+    field = "attribute:ecs.availability-zone"
+  }
+  ordered_placement_strategy {
+    type  = "spread"
+    field = "instanceId"
+  }
+
   load_balancer {
     target_group_arn = var.target_group_arn
     container_name   = var.container_name
