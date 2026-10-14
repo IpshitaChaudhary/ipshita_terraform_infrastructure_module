@@ -38,7 +38,10 @@ Instantiated twice (once for `backend`, once for `frontend`) by the root module.
 |---|---|
 | `aws_cloudwatch_log_group` | Where the container's stdout/stderr ends up - one per service. |
 | `aws_ecs_task_definition` | The container spec: image, CPU/memory, port mappings, log driver config. |
-| `aws_ecs_service` | Keeps the desired count of tasks running on the cluster and registered with its target group. |
+| `aws_ecs_service` | Keeps the desired count of tasks running on the cluster and registered with its target group. Placement strategy spreads tasks by AZ then by host, so `desired_count >= 2` is actually redundant, not just numerically so. |
+| `aws_appautoscaling_target` | Registers the service's `desired_count` as a scalable dimension (`ecs:service:DesiredCount`), with a min/max range. |
+| `aws_appautoscaling_policy` (x2) | Step-scaling policies: tiered scale-up (more tasks the further CPU is over threshold), single-step scale-down. |
+| `aws_cloudwatch_metric_alarm` (x2) | CPU-based triggers for the two scaling policies above - fast to react upward, slower (sustained-low) to react downward. |
 
 ## `Modules/secrets/` - optional secrets access
 
