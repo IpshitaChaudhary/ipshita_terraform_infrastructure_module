@@ -2,6 +2,12 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-15
+
+- `RUNBOOK.md`: documented two routing/CI gotchas found extending the attachment-rule pattern to a second service - sharing one header value across two attachment-only rules makes the lower-priority one permanently unreachable, and manually re-triggering a pipeline for an already-built commit collides on an immutable ECR tag.
+- `RUNBOOK.md`: documented a CodeBuild sizing gotcha - an opaque bundler crash (e.g. esbuild "write EPIPE") is frequently just an OOM kill on undersized compute (`BUILD_GENERAL1_SMALL`), not a real build problem.
+- `RUNBOOK.md`: documented `RegisterTaskDefinition`'s environment/secrets key-conflict validation - a key can't appear in both `container_environment` and `container_secrets`, which is a useful signal (the key may already be injected via the secret) rather than just a blocker.
+
 ## 2026-10-14
 
 - `ecs-service`: added an `ordered_placement_strategy` (spread by AZ, then by host) - `desired_count >= 2` previously didn't guarantee real redundancy; every replica could land on the same instance.
