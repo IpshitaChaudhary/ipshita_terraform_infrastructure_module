@@ -2,6 +2,12 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-16
+
+- `RUNBOOK.md`: documented the orphaned-but-dangerous security group trap - an unattached group with an open rule isn't harmless, it's a loaded gun waiting for something to get reattached to it; found via a full account-wide audit, not by looking at active resources.
+- `RUNBOOK.md`: documented the ECS Exec vs plain `docker exec` environment gotcha - a shell spawned via `aws ecs execute-command` doesn't inherit the container's actual injected environment the way a direct `docker exec` on the host does, easy to misdiagnose as a missing secret.
+- `RUNBOOK.md`: documented a public-bucket investigation methodology - an empty grep of your own codebase doesn't prove a public bucket policy is a misconfiguration, since a third-party service (a CDN, an external processor) pulling from it as an origin won't show up there; measure real traffic non-destructively before restricting anything.
+
 ## 2026-10-15
 
 - `RUNBOOK.md`: documented two routing/CI gotchas found extending the attachment-rule pattern to a second service - sharing one header value across two attachment-only rules makes the lower-priority one permanently unreachable, and manually re-triggering a pipeline for an already-built commit collides on an immutable ECR tag.
