@@ -8,3 +8,9 @@ variable "extra_execution_policy_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "human_access_groups" {
+  description = "Map of IAM group name to the list of managed policy ARNs to attach to it, for tiered human (console/CLI) access - e.g. { \"admin\" = [\"arn:aws:iam::aws:policy/AdministratorAccess\"], \"read-only\" = [\"arn:aws:iam::aws:policy/ReadOnlyAccess\"] }. Empty by default - this module makes no assumption about whether you want it managing human access groups at all."
+  type        = map(list(string))
+  default     = {}
+}
