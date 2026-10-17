@@ -2,6 +2,13 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-17
+
+- `iam`: added opt-in, data-driven human access groups (`human_access_groups`) - a map of group name to managed policy ARNs, separate from the existing ECS task roles. Deliberately doesn't manage group membership, so rotating a person in/out never touches this module's state.
+- `README.md`: added the `iam/` module's missing prose section (it previously only had a one-line tree comment), covering both the ECS roles and the new human access groups capability.
+- `RUNBOOK.md`: documented the retired-but-still-resolvable managed policy gotcha - a policy ARN can resolve successfully while being retired from new attachments in favor of a renamed replacement (check `IsAttachable`, not just that it exists).
+- `RUNBOOK.md`: documented that adding a new access-control layer next to an unrestricted old one doesn't secure anything - the old path has to actually be restricted too, not just left alone while the new one gets tested in isolation.
+
 ## 2026-10-16
 
 - `RUNBOOK.md`: documented the orphaned-but-dangerous security group trap - an unattached group with an open rule isn't harmless, it's a loaded gun waiting for something to get reattached to it; found via a full account-wide audit, not by looking at active resources.
