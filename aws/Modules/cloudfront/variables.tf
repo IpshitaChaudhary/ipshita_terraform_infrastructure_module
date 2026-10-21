@@ -64,3 +64,9 @@ variable "html_cache_key_query_strings" {
   type        = list(string)
   default     = []
 }
+
+variable "no_cache_path_patterns" {
+  description = "Path patterns that must never be cached (account, cart, checkout, auth, API calls, index.html, anything rendered per user). Routed to the ALB with CachingDisabled ahead of every other ordered behavior. Cross-check this against the app's own no-cache list AND any paths the current live distribution already excludes - a path missing here gets cached under the HTML tier and served to the next visitor."
+  type        = list(string)
+  default     = ["/api/*", "/account*", "/cart*", "/checkout*", "/login*", "/logout*", "/index.html"]
+}

@@ -48,6 +48,28 @@ resource "aws_cloudfront_distribution" "this" {
     response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
   }
 
+  # Personalized/never-cache paths -> the ALB, always CachingDisabled. These
+  # are declared before the static behaviors so they take precedence. Only
+  # matters once enable_html_cache is on, but they're harmless (identical to
+  # the default behavior) when it's off. Must stay Managed-AllViewer, not
+  # AllViewerExceptHostHeader: without the viewer's Host, CloudFront has to
+  # validate the ALB's own *.elb.amazonaws.com name against the ALB's
+  # certificate, which never matches - every request on that path 502s.
+  dynamic "ordered_cache_behavior" {
+    for_each = var.no_cache_path_patterns
+    content {
+      path_pattern               = ordered_cache_behavior.value
+      target_origin_id           = "alb-dynamic"
+      viewer_protocol_policy     = "redirect-to-https"
+      allowed_methods            = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+      cached_methods             = ["HEAD", "GET", "OPTIONS"]
+      compress                   = true
+      cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
+      origin_request_policy_id   = "216adef6-5c7f-47e4-b989-5492eafa07d3" # Managed-AllViewer
+      response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+    }
+  }
+
   # Static assets -> S3, CachingOptimized. Managed-CORS-S3Origin only
   # forwards what S3 actually needs (Origin/Access-Control-Request-*) -
   # forwarding unnecessary cookies/headers to an S3 origin is what caused
@@ -80,4 +102,13 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   tags = { Name = "${var.name_prefix}-cf" }
+
+  # A precondition rather than a variable validation, since it spans two
+  # variables (cross-variable validation needs Terraform 1.9+).
+  lifecycle {
+    precondition {
+      condition     = length(var.no_cache_path_patterns) + length(var.static_asset_path_patterns) <= 25
+      error_message = "CloudFront allows 25 cache behaviors per distribution by default - no_cache_path_patterns plus static_asset_path_patterns exceeds that. Consolidate patterns or request a quota increase first."
+    }
+  }
 }
