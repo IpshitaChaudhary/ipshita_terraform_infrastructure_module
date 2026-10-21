@@ -2,6 +2,13 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-21
+
+- `elasticache/`: new module - a Valkey/Redis replication group with at-rest and in-transit encryption always on, and ingress granted only by security group reference (no CIDR input exists). Built from a real finding: a cache port open to `0.0.0.0/0` while the compute actually using it was never allowlisted, so correctly tightening the rule would have silently broken the app.
+- `cloudfront`: added an optional short-TTL HTML cache tier (`enable_html_cache`, off by default) between "never cache" and the long-cache static tier, plus `no_cache_path_patterns` - explicit CachingDisabled behaviors for personalized paths, ordered ahead of everything else, with a precondition on CloudFront's 25-behavior default limit.
+- `RUNBOOK.md`: documented the 502 caused by excluding the viewer Host header against an ALB origin (TLS name validation against the ALB's own hostname), and a rollback-first, throwaway-behavior method for isolating which part of a multi-change CloudFront update broke it.
+- CI: added `elasticache` to the module validation matrix.
+
 ## 2026-10-17
 
 - `iam`: added opt-in, data-driven human access groups (`human_access_groups`) - a map of group name to managed policy ARNs, separate from the existing ECS task roles. Deliberately doesn't manage group membership, so rotating a person in/out never touches this module's state.
