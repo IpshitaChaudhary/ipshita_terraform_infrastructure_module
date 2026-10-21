@@ -42,7 +42,7 @@ aws/
     ├── iam/            - ECS task execution role + task role
     ├── eks/            - EKS cluster, managed node group, OIDC provider for IRSA
     ├── route53/        - looks up an existing hosted zone, creates one alias record in it
-    ├── cloudfront/     - CDN distribution with S3 (static) + ALB (dynamic) origins
+    ├── cloudfront/     - CDN distribution with S3 (static) + ALB (dynamic) origins, optional short-TTL HTML tier
     ├── sqs/            - queue with a dead-letter queue and encryption on by default
     ├── sns/            - topic with encryption and a scoped, opt-in policy
     ├── s3/             - bucket with public access blocked, versioned and encrypted by default
@@ -68,6 +68,8 @@ Looks up an existing hosted zone by name and creates a single alias record point
 ### `cloudfront/` - CDN in front of a split static/dynamic app
 
 One distribution, two origins: an S3 bucket for static assets (`Managed-CachingOptimized` + `Managed-CORS-S3Origin`) and an existing ALB for everything else (`Managed-CachingDisabled` + `Managed-AllViewer`, so session/auth cookies always reach the backend). Uses an Origin Access Identity, not Origin Access Control - OAC's per-request signing to an S3 origin can produce intermittent, edge-location-specific errors that are invisible to `curl` and only reproduce in real browsers at specific edges; OAI has no per-request signing step to fail. The module creates its own OAI and a response headers policy (HSTS, X-Frame-Options, etc.) rather than taking them as inputs, so it's self-contained - a caller only needs to feed the OAI's IAM ARN into their S3 bucket policy. `aliases` defaults to empty, so a distribution can be stood up and fully tested before it ever claims a real domain.
+
+Caching dynamic pages is opt-in: `enable_html_cache` swaps the default behavior to a short-TTL policy (10 minutes by default) whose cache key only includes the headers/cookies/query strings that actually change the rendered HTML. Turning it on makes `no_cache_path_patterns` the important input - every per-user path (account, cart, checkout, auth, API) has to be listed there, or one visitor's page gets cached and served to the next. Cross-check it against both the application's own no-cache list and whatever the currently live distribution already excludes; neither list alone was complete in the real setup this is based on. ALB-targeted behaviors always use `Managed-AllViewer`, never the Host-excluding variant - see the 502 entry in [`RUNBOOK.md`](./RUNBOOK.md).
 
 ### `sqs/` - a queue that's encrypted and bounded by default
 
