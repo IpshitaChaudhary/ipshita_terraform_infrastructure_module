@@ -47,10 +47,11 @@ aws/
     ├── sns/            - topic with encryption and a scoped, opt-in policy
     ├── s3/             - bucket with public access blocked, versioned and encrypted by default
     ├── lambda/         - function with a least-privilege role and a locked-down function URL
-    └── app-runner/     - service with separate access/instance roles and optional private VPC egress
+    ├── app-runner/     - service with separate access/instance roles and optional private VPC egress
+    └── elasticache/    - Valkey/Redis replication group, encrypted, reachable only from allowlisted security groups
 ```
 
-> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, and `app-runner/` are standalone modules, not yet wired into the root `main.tf`. This is also the last module on the original build list - see [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, `app-runner/`, and `elasticache/` are standalone modules, not yet wired into the root `main.tf`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
 
 ### `iam/` - ECS task roles, plus opt-in human access groups
 
@@ -88,11 +89,15 @@ The execution role only gets `AWSLambdaBasicExecutionRole` (write its own logs) 
 
 Two separate IAM roles, not one: an access role (App Runner pulling from ECR) and an instance role (what the running application code itself can call) - folding both into one role would let application code assume ECR-pull permissions it never needs. The instance role is empty by default, same least-privilege philosophy as `lambda/`. A VPC connector is opt-in (`vpc_connector_subnet_ids`) - without one, App Runner can only reach the public internet, which is exactly the kind of pressure that pushes people toward exposing a database or cache publicly just so App Runner can reach it. Autoscaling has an explicit, bounded `autoscaling_max_size` (default 4) rather than being left unbounded, same reasoning as the capacity ASG modules' max size.
 
+### `elasticache/` - a Valkey/Redis cache only its real consumers can reach
+
+Built from a real finding: a dev cache cluster had its port open to `0.0.0.0/0`, and the compute that actually used it wasn't allowlisted anywhere - the only security group it referenced belonged to a long-retired service. Everything worked purely because of the open rule, which means correctly tightening it would have silently broken the live app. This module only accepts consumers as `allowed_security_group_ids` (one ingress rule per security group reference) and has no CIDR input at all, so the dependency is always explicit and there's no input that opens the port to the internet. It's a replication group even at one node, since that's the only resource that supports in-transit encryption and AUTH, and going from 1 node to a primary plus replicas later is a `num_cache_clusters` change instead of a rebuild. At-rest and in-transit encryption are always on and aren't exposed as toggles - enabling at-rest encryption after creation forces a full replacement, so it has to be right from day one. Defaults to the `valkey` engine (wire-compatible with Redis, cheaper on ElastiCache for the same node type).
+
 ### Further reading
 
 - [`RESOURCES.md`](./RESOURCES.md) - the concrete AWS resource types this module creates, grouped by submodule. Useful for a cost/blast-radius review before pointing this at a real account.
 - [`RUNBOOK.md`](./RUNBOOK.md) - operational doc: pre-deploy checklist, deploy procedure, rollback, and troubleshooting.
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) - 5 reference patterns showing how the standalone `vpc`/`iam`/`eks`/`route53`/`cloudfront`/`sqs`/`sns`/`s3`/`lambda`/`app-runner` modules combine in practice.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) - 5 reference patterns showing how the standalone `vpc`/`iam`/`eks`/`route53`/`cloudfront`/`sqs`/`sns`/`s3`/`lambda`/`app-runner`/`elasticache` modules combine in practice.
 
 ### Prerequisites
 
