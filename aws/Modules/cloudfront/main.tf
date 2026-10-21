@@ -33,17 +33,18 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
-  # Dynamic/SSR pages -> the ALB. CachingDisabled + AllViewer so every
-  # request reaches the origin fresh with full cookies/headers/query
-  # strings - required for session/auth cookies to reach the backend.
+  # Dynamic/SSR pages -> the ALB. CachingDisabled by default, or the
+  # short-TTL HTML policy when enable_html_cache is on. AllViewer either way
+  # so full cookies/headers/query strings reach the origin - required for
+  # session/auth cookies to reach the backend.
   default_cache_behavior {
     target_origin_id           = "alb-dynamic"
     viewer_protocol_policy     = "redirect-to-https"
     allowed_methods            = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
     cached_methods             = ["HEAD", "GET", "OPTIONS"]
     compress                   = true
-    cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
-    origin_request_policy_id   = "216adef6-5c7f-47e4-b989-5492eafa07d3" # Managed-AllViewer
+    cache_policy_id            = var.enable_html_cache ? aws_cloudfront_cache_policy.html[0].id : "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # else Managed-CachingDisabled
+    origin_request_policy_id   = "216adef6-5c7f-47e4-b989-5492eafa07d3"                                                                  # Managed-AllViewer
     response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
   }
 
