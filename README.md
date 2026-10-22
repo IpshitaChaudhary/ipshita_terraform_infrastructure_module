@@ -48,10 +48,11 @@ aws/
     ├── s3/             - bucket with public access blocked, versioned and encrypted by default
     ├── lambda/         - function with a least-privilege role and a locked-down function URL
     ├── app-runner/     - service with separate access/instance roles and optional private VPC egress
-    └── elasticache/    - Valkey/Redis replication group, encrypted, reachable only from allowlisted security groups
+    ├── elasticache/    - Valkey/Redis replication group, encrypted, reachable only from allowlisted security groups
+    └── ssm-access/     - per-person server access: Session Manager Run As, tag-scoped sessions, named users + sudo recording
 ```
 
-> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, `app-runner/`, and `elasticache/` are standalone modules, not yet wired into the root `main.tf`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, `app-runner/`, `elasticache/`, and `ssm-access/` are standalone modules, not yet wired into the root `main.tf`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
 
 ### `iam/` - ECS task roles, plus opt-in human access groups
 
@@ -94,6 +95,10 @@ Two separate IAM roles, not one: an access role (App Runner pulling from ECR) an
 ### `elasticache/` - a Valkey/Redis cache only its real consumers can reach
 
 Built from a real finding: a dev cache cluster had its port open to `0.0.0.0/0`, and the compute that actually used it wasn't allowlisted anywhere - the only security group it referenced belonged to a long-retired service. Everything worked purely because of the open rule, which means correctly tightening it would have silently broken the live app. This module only accepts consumers as `allowed_security_group_ids` (one ingress rule per security group reference) and has no CIDR input at all, so the dependency is always explicit and there's no input that opens the port to the internet. It's a replication group even at one node, since that's the only resource that supports in-transit encryption and AUTH, and going from 1 node to a primary plus replicas later is a `num_cache_clusters` change instead of a rebuild. At-rest and in-transit encryption are always on and aren't exposed as toggles - enabling at-rest encryption after creation forces a full replacement, so it has to be right from day one. Defaults to the `valkey` engine (wire-compatible with Redis, cheaper on ElastiCache for the same node type).
+
+### `ssm-access/` - every person reaches a server as themselves
+
+Built from replacing shared server logins on a real platform. By default every Session Manager user lands as the same `ssm-user`, and everyone using a shared SSH key lands as `ubuntu`/`ec2-user` - either way, the server's own logs can't say who did what. This module turns on Session Manager **Run As**, so each person lands as their own Linux user (taken from the `SSMSessionRunAs` tag on their IAM user or role), and generates a start-session policy that only works on instances carrying an access tag, rather than every instance in the account. `named_users_user_data` renders a boot script that creates those same users with key-only login, passwordless sudo and **sudo session recording** (replayable with `sudoreplay`, cleaned up after `session_recording_retention_days`). Append it to a launch template, because users created by hand on an Auto Scaling instance vanish when the instance is replaced. Use the same user name in `named_users` as in the person's tag, so SSH and SSM land them as the same user; a tagged person whose user doesn't exist on an instance can't start a session there at all (there is no fallback to `ssm-user`).
 
 ### Further reading
 

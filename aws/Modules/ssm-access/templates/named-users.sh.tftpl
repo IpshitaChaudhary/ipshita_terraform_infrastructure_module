@@ -1,0 +1,25 @@
+#!/bin/bash
+# Per-person Linux users with key-only login, passwordless sudo, and sudo
+# session recording. Idempotent, so it is safe on every boot.
+set -euo pipefail
+
+%{ for name, key in users ~}
+id "${name}" >/dev/null 2>&1 || useradd -m -s /bin/bash "${name}"
+install -d -m 700 -o "${name}" -g "${name}" /home/${name}/.ssh
+echo "${key}" > /home/${name}/.ssh/authorized_keys
+chown "${name}:${name}" /home/${name}/.ssh/authorized_keys
+chmod 600 /home/${name}/.ssh/authorized_keys
+tmp=$(mktemp)
+echo "${name} ALL=(ALL) NOPASSWD:ALL" > "$tmp"
+visudo -cf "$tmp" && install -m 440 -o root -g root "$tmp" /etc/sudoers.d/90-${name}
+rm -f "$tmp"
+%{ endfor ~}
+
+# Record every sudo session (sudo -iu <app user> included) under the person
+# who ran it. Replay with: sudo sudoreplay -l / sudo sudoreplay <TSID>
+tmp=$(mktemp)
+printf '%s\n' 'Defaults log_output' 'Defaults iolog_dir=/var/log/sudo-io' 'Defaults!/usr/bin/sudoreplay !log_output' > "$tmp"
+visudo -cf "$tmp" && install -m 440 -o root -g root "$tmp" /etc/sudoers.d/91-session-recording
+rm -f "$tmp"
+install -d -m 700 -o root -g root /var/log/sudo-io
+echo 'd /var/log/sudo-io 0700 root root ${retention_days}d' > /etc/tmpfiles.d/sudo-io.conf

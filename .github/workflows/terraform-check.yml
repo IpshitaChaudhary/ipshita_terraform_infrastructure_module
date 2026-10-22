@@ -33,7 +33,7 @@ jobs:
   # The root module above only wires in capacity/ecr/ecs-service/loadbalancer/
   # secrets/security, so `terraform validate` there never touches the other,
   # standalone modules (vpc, iam, eks, route53, cloudfront, sqs, sns, s3,
-  # lambda, app-runner, elasticache) - they'd never get validated at all otherwise. This
+  # lambda, app-runner, elasticache, ssm-access) - they'd never get validated at all otherwise. This
   # job validates every module under aws/Modules/ independently.
   check-modules:
     runs-on: ubuntu-latest
