@@ -1,9 +1,9 @@
 # Architecture patterns
 
 The modules under [`aws/Modules/`](./aws/Modules/) are building blocks, not
-opinions about how to assemble them. This doc is the opinion layer: four
+opinions about how to assemble them. This doc is the opinion layer: five
 real patterns, each a different shape of application, showing which modules
-combine and why - so picking a starting point doesn't mean reading all ten
+combine and why - so picking a starting point doesn't mean reading all eighteen
 modules' source first.
 
 None of these patterns are pre-wired root modules you can `terraform apply`
@@ -13,13 +13,11 @@ everything for you"). They're a map, not a template.
 
 ## 1. Static site / SPA
 
-```
-Client
-  │
-  ▼
-CloudFront (cloudfront/)
-  ├─ static assets  → S3 (s3/), via OAI
-  └─ alias record   → Route53 (route53/)
+```mermaid
+flowchart LR
+  client([Client]) --> cf[cloudfront]
+  cf -->|"static assets, via OAI"| s3[(s3 - private, versioned, encrypted)]
+  dns[route53 alias record] -.->|points at| cf
 ```
 
 **Modules:** `s3` → `cloudfront` → `route53`
@@ -34,17 +32,21 @@ app.
 
 ## 2. Containerized API (EC2-backed ECS)
 
-```
-Client
-  │
-  ▼
-ALB (part of the root aws/ module)
-  ├─ host-header rule → backend target group  ─┐
-  └─ default action    → frontend target group ─┤
-                                                  ▼
-                                   ECS cluster (EC2 capacity provider)
-                                   ├─ backend service  (ecs-service)
-                                   └─ frontend service (ecs-service)
+```mermaid
+flowchart TB
+  client([Client]) --> alb[loadbalancer - ALB]
+  alb -->|host-header rule| btg[backend target group]
+  alb -->|default action| ftg[frontend target group]
+  subgraph cluster["ECS cluster - EC2 capacity provider"]
+    b["backend service (ecs-service)"]
+    f["frontend service (ecs-service)"]
+  end
+  btg --> b
+  ftg --> f
+  cap[capacity - ASG] --> cluster
+  ecr[(ecr)] -.->|images| cluster
+  vpc[vpc] -.-> alb
+  iam[iam roles] -.-> cluster
 ```
 
 **Modules:** `vpc` → `iam` → `security`/`capacity`/`ecs-service`/`loadbalancer`/`ecr` (the root `aws/` module)
@@ -60,16 +62,17 @@ capacity ASG.
 
 ## 3. Kubernetes platform
 
-```
-Client
-  │
-  ▼
-(an Ingress controller / load balancer you add on top - not in this repo)
-  │
-  ▼
-EKS cluster (eks/)
-  ├─ managed node group
-  └─ OIDC provider → IRSA for pod-level IAM
+```mermaid
+flowchart TB
+  client([Client]) --> ing["Ingress controller / LB (added on top, not in this repo)"]
+  ing --> eks
+  subgraph eks["eks"]
+    cp[control plane]
+    ng[managed node group]
+    oidc[OIDC provider]
+  end
+  oidc -->|IRSA| pods[pods assume their own IAM roles]
+  vpc[vpc] -.-> eks
 ```
 
 **Modules:** `vpc` → `iam` → `eks`
@@ -83,14 +86,13 @@ running both compute models side by side.
 
 ## 4. Serverless event-driven backend
 
-```
-API caller
-  │
-  ▼
-Lambda function URL, AWS_IAM auth (lambda/)
-  │
-  ├─ sns/  → fan-out to subscribers
-  └─ sqs/  → queue + DLQ for async work
+```mermaid
+flowchart LR
+  caller([API caller]) -->|AWS_IAM auth| fn[lambda - function URL]
+  fn --> sns[sns topic]
+  fn --> sqs[sqs queue]
+  sns -->|fan-out| subs[subscribers]
+  sqs -->|after max receives| dlq[(dead-letter queue)]
 ```
 
 **Modules:** `lambda` + `sns` + `sqs` (+ `iam` if the execution role needs
@@ -105,14 +107,12 @@ your topic.
 
 ## 5. Fully-managed containers, no cluster to manage
 
-```
-Client
-  │
-  ▼
-App Runner service (app-runner/)
-  ├─ access role    → pulls from ECR (ecr/)
-  ├─ instance role  → what the app code can call
-  └─ VPC connector  → private egress to an RDS/ElastiCache instance
+```mermaid
+flowchart LR
+  client([Client]) --> ar[app-runner service]
+  ecr[(ecr)] -->|"pulled via access role"| ar
+  ar -->|"instance role: what app code can call"| aws[AWS APIs]
+  ar -->|"VPC connector (opt-in)"| priv[(private RDS / ElastiCache)]
 ```
 
 **Modules:** `ecr` → `app-runner` (+ `vpc` if using the private VPC connector)
@@ -122,6 +122,23 @@ pattern 4 (no containers at all). App Runner handles the compute/scaling
 entirely - `app-runner`'s job is just the IAM split (access vs. instance
 role, see that module's README) and making private networking opt-in
 rather than pushing you toward a publicly-exposed database.
+
+## Cross-cutting: who can reach the servers
+
+```mermaid
+flowchart LR
+  person([Engineer]) -->|"IAM identity tagged SSMSessionRunAs=name"| ssm[Session Manager]
+  ssm -->|"tag-scoped start-session policy"| inst[tagged instance]
+  inst --> user["lands as their own Linux user"]
+  user -->|"sudo -iu app-user"| rec[(sudo session recording)]
+```
+
+**Modules:** `ssm-access` (+ `capacity`'s launch template for the user data)
+
+Applies to any pattern that has instances (2, and the node groups in 3).
+Each person reaches a server as themselves instead of a shared `ssm-user`
+or default login, only on instances tagged for access, and anything they do
+as the app user is recorded under their name.
 
 ## Picking one
 

@@ -8,6 +8,9 @@ All notable changes to this repository, in the order they happened.
 - `ssm-access/`: new module for per-person server access - Session Manager Run As preferences (each person lands as their own Linux user from the `SSMSessionRunAs` tag instead of the shared `ssm-user`), a start-session policy scoped to tagged instances, optional session transcripts to CloudWatch, and a boot script for launch templates that creates named users with key-only login, passwordless sudo and sudo session recording.
 - `RUNBOOK.md`: documented Run As failure modes, why a private bastion address times out from an office network, and why personal private keys don't belong on a bastion.
 - CI: added `ssm-access` to the module validation matrix.
+- `README.md`: rewrote the outdated intro, added CI/release/license badges, a Mermaid module map of how the 18 modules connect, and a Mermaid request-flow diagram for the root module.
+- `ARCHITECTURE.md`: replaced the five ASCII pattern diagrams with Mermaid, fixed the stale pattern/module counts, and added a cross-cutting section for per-person server access (`ssm-access`).
+- Tagged the first release, `v1.0.0`.
 
 ## 2026-10-21
 
