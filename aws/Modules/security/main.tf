@@ -8,24 +8,24 @@ resource "aws_security_group" "alb" {
 
 resource "aws_vpc_security_group_ingress_rule" "alb_http_v4" {
   security_group_id = aws_security_group.alb.id
-  ip_protocol        = "tcp"
-  from_port          = 80
-  to_port            = 80
-  cidr_ipv4          = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_https_v4" {
   security_group_id = aws_security_group.alb.id
-  ip_protocol        = "tcp"
-  from_port          = 443
-  to_port            = 443
-  cidr_ipv4          = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_egress_rule" "alb_all_v4" {
   security_group_id = aws_security_group.alb.id
-  ip_protocol        = "-1"
-  cidr_ipv4          = "0.0.0.0/0"
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_security_group" "container_instances" {
@@ -45,6 +45,6 @@ resource "aws_vpc_security_group_ingress_rule" "container_instances_from_alb" {
 
 resource "aws_vpc_security_group_egress_rule" "container_instances_all_v4" {
   security_group_id = aws_security_group.container_instances.id
-  ip_protocol        = "-1"
-  cidr_ipv4          = "0.0.0.0/0"
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
