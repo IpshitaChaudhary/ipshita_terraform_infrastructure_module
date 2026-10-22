@@ -139,3 +139,17 @@ Take the `alb_dns_name` output and point your domain(s) at it (as a DNS alias/CN
 - Roll back first, root-cause second. Before any risky distribution change, save `aws cloudfront get-distribution-config --id <id>` to a file. Note that the saved file is `{ETag, DistributionConfig}`, but `update-distribution --distribution-config` only takes the inner `DistributionConfig` object, and `--if-match` needs the distribution's *current* ETag, not the one in the backup. Extract the field before you need it in a hurry.
 - Then test the single riskiest setting in isolation: add one throwaway behavior on a path nothing real uses (e.g. `/__cftest-*`) with only that setting changed, leave every real behavior untouched, and request that path. If it reproduces the failure while real paths stay healthy, you've isolated the cause without a second outage. Delete the test behavior afterwards.
 - Changing 20+ behaviors and removing an origin in one update is what made the original failure slow to diagnose. Applying the real change after the isolated test passes costs one extra deploy cycle; a production outage while you bisect costs far more.
+
+**A person's SSM session fails to start (or they still land as `ssm-user`) after turning on Session Manager Run As:**
+- Run As picks the Linux user from the `SSMSessionRunAs` tag on the IAM user or role that starts the session, and that user must already exist on the instance. A tagged person whose user is missing on a given instance can't open a session there at all - there is no fallback to `ssm-user` or the default user.
+- Check the tag key spelling exactly (`SSMSessionRunAs`), that the tag is on the identity actually starting the session (an assumed role, not the IAM user behind it), and that the preference was saved in the same region as the instance - Session Manager preferences are per account and per region.
+- Tags are read at session start, so close and reopen the session after changing one.
+- Keep one Linux user name per person across every server and account; the tag can only hold one name.
+
+**An SSH jump through a bastion times out, but the bastion is up and its security group allows your office IP:**
+- Check which bastion address you used. A VPC-private address (e.g. `10.x.x.x`) is only reachable from inside the VPC or over a VPN/Direct Connect - being in the office doesn't put your laptop on the VPC network. Use the bastion's public address for `-J`; the final target can stay private, since the bastion reaches it from inside.
+- A hostname like `ip-10-0-1-23` in the shell prompt is the bastion's internal name, not proof you connected over that address.
+
+**Should a person's private key live on the bastion so they can hop onward from there?**
+- No. Anyone with sudo on the bastion can copy it and log into other servers as that person, which breaks per-person accountability, and a compromised bastion hands over every key stored on it. Keep keys on the laptop and use `ssh -J bastion target` (or a `ProxyJump` entry in `~/.ssh/config`); agent forwarding (`ssh -A`) is the fallback, with the trade-off that a root user on the bastion can use the forwarded agent while you're connected.
+- The same applies to a shared "master" key parked in the default user's home on the bastion: it's the pattern per-person users are meant to replace.

@@ -2,6 +2,13 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-22
+
+- `security`: fixed `terraform fmt` alignment in the ingress/egress rules - whitespace only, but it had kept the root CI check red.
+- `ssm-access/`: new module for per-person server access - Session Manager Run As preferences (each person lands as their own Linux user from the `SSMSessionRunAs` tag instead of the shared `ssm-user`), a start-session policy scoped to tagged instances, optional session transcripts to CloudWatch, and a boot script for launch templates that creates named users with key-only login, passwordless sudo and sudo session recording.
+- `RUNBOOK.md`: documented Run As failure modes, why a private bastion address times out from an office network, and why personal private keys don't belong on a bastion.
+- CI: added `ssm-access` to the module validation matrix.
+
 ## 2026-10-21
 
 - `elasticache/`: new module - a Valkey/Redis replication group with at-rest and in-transit encryption always on, and ingress granted only by security group reference (no CIDR input exists). Built from a real finding: a cache port open to `0.0.0.0/0` while the compute actually using it was never allowlisted, so correctly tightening the rule would have silently broken the app.

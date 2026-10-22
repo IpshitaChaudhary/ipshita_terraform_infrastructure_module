@@ -52,6 +52,7 @@ jobs:
           - lambda
           - app-runner
           - elasticache
+          - ssm-access
           - capacity
           - ecr
           - ecs-service
