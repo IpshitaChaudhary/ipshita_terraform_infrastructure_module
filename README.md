@@ -1,26 +1,81 @@
 # ipshita_terraform_infrastructure_module
 
-Reusable, sanitized Terraform modules for common infrastructure patterns. Each top-level folder is a self-contained module for one piece of infrastructure - `aws/` is the first one, more (EKS, etc.) will be added as siblings over time.
+[![Terraform fmt & validate](https://github.com/IpshitaChaudhary/ipshita_terraform_infrastructure_module/actions/workflows/terraform-check.yml/badge.svg)](https://github.com/IpshitaChaudhary/ipshita_terraform_infrastructure_module/actions/workflows/terraform-check.yml)
+[![Release](https://img.shields.io/github/v/release/IpshitaChaudhary/ipshita_terraform_infrastructure_module)](https://github.com/IpshitaChaudhary/ipshita_terraform_infrastructure_module/releases)
+[![License](https://img.shields.io/github/license/IpshitaChaudhary/ipshita_terraform_infrastructure_module)](./LICENSE)
+![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.5-7B42BC)
+![AWS provider](https://img.shields.io/badge/aws%20provider-~%3E5.0-FF9900)
 
-## `aws/` - AWS ECS on EC2 capacity, with an ALB in front
+18 reusable AWS Terraform modules that are secure by default: encrypted, private and least-privilege unless a caller deliberately opts out. Every hardening default and every [runbook](./RUNBOOK.md) entry comes from something observed on a real production platform, rewritten with all company identifiers removed.
 
-More building-block modules (VPC, IAM, route tables, security groups, ...) will be added under `aws/Modules/` over time, alongside the ECS-specific ones already there.
+### How the modules fit together
 
-Stands up a small, self-contained ECS setup for a typical two-service app (a backend API and a frontend web app), running on EC2-launch-type capacity behind an Application Load Balancer.
+```mermaid
+flowchart LR
+  subgraph edge["Edge & DNS"]
+    route53[route53]
+    cloudfront[cloudfront]
+  end
+  subgraph net["Network & security"]
+    vpc[vpc]
+    security[security]
+    loadbalancer[loadbalancer]
+  end
+  subgraph compute["Compute"]
+    ecs[ecs-service]
+    capacity[capacity]
+    eks[eks]
+    apprunner[app-runner]
+    lambda[lambda]
+  end
+  subgraph data["Data & messaging"]
+    s3[s3]
+    sqs[sqs]
+    sns[sns]
+    cache[elasticache]
+    ecr[ecr]
+  end
+  subgraph access["Identity & access"]
+    iam[iam]
+    secrets[secrets]
+    ssm[ssm-access]
+  end
+  route53 --> cloudfront --> loadbalancer --> ecs
+  cloudfront -->|static assets| s3
+  vpc --> security --> loadbalancer
+  capacity --> ecs
+  ecr --> ecs
+  ecs --> cache
+  ecs --> sqs
+  sns --> sqs
+  sqs --> lambda
+  iam -.-> ecs
+  secrets -.-> ecs
+  ssm -.-> capacity
+```
+
+Solid arrows are traffic or data flow; dotted arrows are permissions. `eks` and `app-runner` are alternative compute choices to ECS, not layers on top of it - see [`ARCHITECTURE.md`](./ARCHITECTURE.md) for five patterns that combine these modules.
+
+## `aws/` - the root module: a two-service app on ECS with an ALB in front
+
+The root module wires `security`, `secrets`, `ecr`, `capacity`, `loadbalancer` and two `ecs-service` instances into a working stack: a backend API and a frontend web app on EC2-launch-type capacity, behind an Application Load Balancer.
 
 **Request flow:**
 
-```
-Client
-  │
-  ▼
-Application Load Balancer (HTTPS, host-header routing)
-  ├─ backend_host_header  → backend target group  ─┐
-  └─ frontend_host_header → frontend target group ─┤
-                                                     ▼
-                                    ECS cluster (EC2 capacity provider)
-                                    ├─ backend service  (EC2-launch-type task)
-                                    └─ frontend service (EC2-launch-type task)
+```mermaid
+flowchart TB
+  client([Client]) -->|HTTPS| alb[Application Load Balancer]
+  alb -->|"Host: backend_host_header"| btg[backend target group]
+  alb -->|"Host: frontend_host_header"| ftg[frontend target group]
+  subgraph cluster["ECS cluster - EC2 capacity provider, tasks spread across AZs"]
+    bsvc[backend service]
+    fsvc[frontend service]
+  end
+  btg --> bsvc
+  ftg --> fsvc
+  ecr[(ECR images)] -.->|pull| cluster
+  sm[(Secrets Manager)] -.->|injected at start| bsvc
+  asg[Auto Scaling group] -->|instances| cluster
 ```
 
 The module assumes you already have a VPC, subnets, an ACM certificate, and the standard ECS IAM roles - it only reads those as input, it never creates or manages them. Everything it *does* create (security groups, the EC2 capacity ASG, the ECS cluster, the ALB, and both services) is new and additive.
