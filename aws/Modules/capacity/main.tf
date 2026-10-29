@@ -5,6 +5,16 @@ data "aws_ssm_parameter" "ecs_optimized_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 }
 
+# Looked up only to get the AMI's root device name for block_device_mappings.
+data "aws_ami" "ecs_optimized" {
+  owners = ["amazon"]
+
+  filter {
+    name   = "image-id"
+    values = [data.aws_ssm_parameter.ecs_optimized_ami.value]
+  }
+}
+
 resource "aws_iam_role" "ecs_instance_role" {
   name = "${var.name_prefix}-ecs-instance-role"
 
@@ -60,6 +70,33 @@ resource "aws_launch_template" "ecs_instances" {
 
   iam_instance_profile {
     arn = aws_iam_instance_profile.ecs_instance_role.arn
+  }
+
+  # IMDSv2 only. Without this block the launch template leaves IMDS at the
+  # AMI/account default, which on older accounts still allows token-less IMDSv1
+  # (the SSRF-to-credentials path). Hop limit 2, not 1: tasks in bridge network
+  # mode sit one network hop behind the host and still need to reach IMDS.
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+    instance_metadata_tags      = "disabled"
+  }
+
+  # Spell the root disk out instead of inheriting the AMI's block device mapping:
+  # encrypted regardless of the account's EBS-encryption-by-default setting, and
+  # deleted with the instance. An AMI baked with delete_on_termination = false
+  # leaves one orphaned volume behind every time the ASG replaces an instance -
+  # a crash-looping group can pile up hundreds of them before anyone notices.
+  block_device_mappings {
+    device_name = data.aws_ami.ecs_optimized.root_device_name
+
+    ebs {
+      volume_size           = var.root_volume_size_gb
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
   }
 
   user_data = base64encode(<<-EOF
