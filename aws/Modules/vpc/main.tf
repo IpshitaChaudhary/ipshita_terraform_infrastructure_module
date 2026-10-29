@@ -6,6 +6,16 @@ resource "aws_vpc" "this" {
   tags = { Name = "${var.name_prefix}-vpc" }
 }
 
+# Every VPC comes with a "default" security group that allows all traffic between
+# its members and all egress. Anything launched without an explicit group lands in
+# it. Taking it under management with no rules empties it, so a forgotten
+# security_groups argument fails closed instead of open.
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this.id
+
+  tags = { Name = "${var.name_prefix}-default-sg-unused" }
+}
+
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 

@@ -12,6 +12,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http_v4" {
   from_port         = 80
   to_port           = 80
   cidr_ipv4         = "0.0.0.0/0"
+  description       = "HTTP from anywhere - the listener only redirects it to HTTPS"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_https_v4" {
@@ -20,12 +21,14 @@ resource "aws_vpc_security_group_ingress_rule" "alb_https_v4" {
   from_port         = 443
   to_port           = 443
   cidr_ipv4         = "0.0.0.0/0"
+  description       = "HTTPS from anywhere - public entry point"
 }
 
 resource "aws_vpc_security_group_egress_rule" "alb_all_v4" {
   security_group_id = aws_security_group.alb.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
+  description       = "To targets on ECS dynamic host ports (range not known in advance)"
 }
 
 resource "aws_security_group" "container_instances" {
@@ -47,4 +50,5 @@ resource "aws_vpc_security_group_egress_rule" "container_instances_all_v4" {
   security_group_id = aws_security_group.container_instances.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
+  description       = "Outbound via NAT: ECR pulls, ECS/SSM endpoints, third-party APIs"
 }
