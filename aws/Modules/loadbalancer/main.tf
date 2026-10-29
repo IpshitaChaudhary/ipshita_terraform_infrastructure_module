@@ -5,6 +5,11 @@ resource "aws_lb" "this" {
   security_groups    = [var.alb_security_group_id]
   subnets            = var.subnet_ids
 
+  # Drop headers whose names aren't valid HTTP tokens instead of forwarding them
+  # to the app - closes off header-smuggling tricks that rely on the backend
+  # parsing a malformed header differently from the ALB.
+  drop_invalid_header_fields = true
+
   tags = { Name = var.alb_name }
 }
 

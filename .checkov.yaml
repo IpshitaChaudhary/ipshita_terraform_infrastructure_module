@@ -1,0 +1,54 @@
+# Checkov config, used by CI and locally:
+#   checkov -d aws --framework terraform --config-file .checkov.yaml
+#
+# Anything Checkov reports that is NOT listed below fails CI. Every skip is a
+# deliberate decision with the reason next to it - if a reason stops being true,
+# delete the line and fix the module instead.
+
+compact: true
+quiet: true
+framework:
+  - terraform
+skip-check:
+  # --- Intentional by design ---------------------------------------------------
+  - CKV_AWS_341  # capacity: IMDS hop limit 2 - bridge-mode tasks are one hop behind the host and need IMDS (IMDSv2 tokens are still required)
+  - CKV_AWS_260  # security: port 80 open to the world only so the listener can redirect to HTTPS
+  - CKV_AWS_378  # loadbalancer: same HTTP listener - its only action is a 301 to HTTPS
+  - CKV2_AWS_5   # security: false positive - the groups are attached by the capacity/loadbalancer modules via outputs
+  - CKV_AWS_356  # ssm-access: Describe*/GetConnectionStatus don't support resource-level permissions; start-session itself is tag-scoped
+  - CKV_AWS_305  # cloudfront: origin is an application (ALB), not a static S3 site, so a default root object doesn't apply
+  - CKV_AWS_38   # eks: public endpoint is opt-out (endpoint_public_access) so kubectl works from laptops/CI; callers can close it
+  - CKV_AWS_39   # eks: see CKV_AWS_38
+
+  # --- Cost / volume decisions left to the caller ------------------------------
+  # Each of these adds a per-request or per-GB bill that depends on traffic; the
+  # modules stay cheap by default and the caller turns them on per environment.
+  - CKV_AWS_68   # cloudfront: WAF (~$5/ACL + $0.60 per 1M requests) - attach per environment
+  - CKV2_AWS_28  # loadbalancer: WAF, as above - for an API not behind CloudFront this is where it belongs
+  - CKV2_AWS_47  # cloudfront: Log4j managed rule only applies once a WAF ACL is attached
+  - CKV2_AWS_11  # vpc: flow logs bill per GB ingested
+  - CKV_AWS_91   # loadbalancer: access logs to S3
+  - CKV_AWS_86   # cloudfront: standard logs to S3
+  - CKV_AWS_18   # s3: server access logging needs a separate log bucket
+  - CKV_AWS_65   # capacity: Container Insights bills per metric per task
+  - CKV_AWS_50   # lambda: X-Ray tracing
+  - CKV_AWS_37   # eks: control plane log types are billed per GB in CloudWatch
+  - CKV_AWS_338  # ecs-service/lambda: retention is set for cost, not 1 year by default
+  - CKV_AWS_158  # ecs-service/lambda: logs use CloudWatch's default encryption, not a customer KMS key ($1/key/month)
+  - CKV_AWS_173  # lambda: env vars use the AWS-managed key; secrets belong in Secrets Manager anyway
+  - CKV2_AWS_50  # elasticache: Multi-AZ doubles node cost - opt-in per environment
+  - CKV_AWS_144  # s3: cross-region replication doubles storage
+
+  # --- Workload-specific, no sensible module-wide default -----------------------
+  - CKV_AWS_115  # lambda: reserved concurrency depends on the downstream it protects
+  - CKV_AWS_116  # lambda: DLQ only matters for async invocations
+  - CKV_AWS_117  # lambda: VPC attachment only when the function needs private resources
+  - CKV_AWS_272  # lambda: code signing needs a signing profile per pipeline
+  - CKV2_AWS_61  # s3: lifecycle rules depend on what the bucket stores
+  - CKV2_AWS_62  # s3: event notifications depend on the consumer
+  - CKV_AWS_310  # cloudfront: origin failover needs a second origin
+  - CKV_AWS_374  # cloudfront: geo restriction is a business decision
+  - CKV_AWS_150  # loadbalancer: deletion protection would block `terraform destroy` of test environments
+
+  # --- Known gap, tracked -----------------------------------------------------
+  - CKV_AWS_58   # eks: envelope encryption of Secrets needs a KMS key input - not built yet

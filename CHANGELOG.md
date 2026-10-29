@@ -2,6 +2,16 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-29
+
+- CI: added **tflint** (recommended preset + AWS ruleset, `.tflint.hcl`) and a **Checkov** security scan (`.checkov.yaml`). Checkov fails the build on any finding not listed in `.checkov.yaml`, and every listed one carries the reason it is accepted.
+- `capacity`: launch template now enforces IMDSv2 (hop limit 2 for bridge-mode tasks) and defines the root disk explicitly - gp3, encrypted, `delete_on_termination = true`, size via new `root_volume_size_gb`. Comes from a real cleanup of 178 orphaned volumes left by an AMI baked with delete-on-termination off.
+- `vpc`: the VPC's default security group is now managed with no rules, so anything launched without an explicit group fails closed.
+- `loadbalancer`: `drop_invalid_header_fields = true` on the ALB.
+- `security`: every ingress/egress rule has a description.
+- Every variable and output across all 18 modules and the root now has a description (135 were missing), enforced by tflint from now on.
+- **Breaking:** `eks` no longer takes `vpc_id` - it was required but unused (EKS derives the VPC from `subnet_ids`). Remove the argument from callers.
+
 ## 2026-10-22
 
 - `security`: fixed `terraform fmt` alignment in the ingress/egress rules - whitespace only, but it had kept the root CI check red.

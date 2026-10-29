@@ -5,11 +5,13 @@ on:
     paths:
       - "**/*.tf"
       - ".tflint.hcl"
+      - ".checkov.yaml"
       - ".github/workflows/terraform-check.yml"
   pull_request:
     paths:
       - "**/*.tf"
       - ".tflint.hcl"
+      - ".checkov.yaml"
       - ".github/workflows/terraform-check.yml"
 
 jobs:
@@ -61,6 +63,23 @@ jobs:
 
       - name: tflint (every module)
         run: tflint --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl" --format compact
+
+  # Security/misconfiguration scan. Fails on any finding not explicitly accepted
+  # (with a reason) in .checkov.yaml.
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Checkov
+        run: pip install checkov==3.4.0
+
+      - name: checkov (all modules)
+        run: checkov -d aws --config-file .checkov.yaml
 
   # The root module above only wires in capacity/ecr/ecs-service/loadbalancer/
   # secrets/security, so `terraform validate` there never touches the other,
