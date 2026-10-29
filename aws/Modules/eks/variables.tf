@@ -9,11 +9,6 @@ variable "kubernetes_version" {
   default     = null
 }
 
-variable "vpc_id" {
-  description = "Existing VPC to run the cluster in (e.g. the vpc_id output of the vpc module)."
-  type        = string
-}
-
 variable "subnet_ids" {
   description = "Subnets the control plane's elastic network interfaces are attached to. Needs both public and private subnets across at least two AZs for a highly-available control plane."
   type        = list(string)

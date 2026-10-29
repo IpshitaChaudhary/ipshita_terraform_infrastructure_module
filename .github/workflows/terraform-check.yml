@@ -4,9 +4,13 @@ on:
   push:
     paths:
       - "**/*.tf"
+      - ".tflint.hcl"
+      - ".github/workflows/terraform-check.yml"
   pull_request:
     paths:
       - "**/*.tf"
+      - ".tflint.hcl"
+      - ".github/workflows/terraform-check.yml"
 
 jobs:
   check-root:
@@ -29,6 +33,31 @@ jobs:
 
       - name: terraform validate
         run: terraform validate
+
+  # validate proves the HCL parses; tflint catches what it lets through (unused
+  # variables, undocumented inputs/outputs, deprecated syntax, invalid AWS values).
+  # Config lives in .tflint.hcl at the repo root.
+  tflint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.65.0
+
+      - name: tflint --init (download the AWS ruleset)
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: tflint (every module)
+        run: tflint --recursive --format compact
 
   # The root module above only wires in capacity/ecr/ecs-service/loadbalancer/
   # secrets/security, so `terraform validate` there never touches the other,
