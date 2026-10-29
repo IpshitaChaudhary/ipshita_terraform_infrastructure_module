@@ -9,7 +9,8 @@ output "reader_endpoint_address" {
 }
 
 output "port" {
-  value = aws_elasticache_replication_group.this.port
+  description = "Port clients connect to."
+  value       = aws_elasticache_replication_group.this.port
 }
 
 output "security_group_id" {

@@ -51,13 +51,16 @@ jobs:
         with:
           tflint_version: v0.65.0
 
+      # --recursive looks for .tflint.hcl inside each module directory, so the
+      # root config has to be passed explicitly (absolute path) or it is silently
+      # ignored and only tflint's built-in defaults run.
       - name: tflint --init (download the AWS ruleset)
-        run: tflint --init
+        run: tflint --init --config "$GITHUB_WORKSPACE/.tflint.hcl"
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: tflint (every module)
-        run: tflint --recursive --format compact
+        run: tflint --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl" --format compact
 
   # The root module above only wires in capacity/ecr/ecs-service/loadbalancer/
   # secrets/security, so `terraform validate` there never touches the other,

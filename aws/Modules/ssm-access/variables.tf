@@ -16,8 +16,9 @@ variable "run_as_default_user" {
 }
 
 variable "idle_session_timeout_minutes" {
-  type    = number
-  default = 20
+  description = "Session Manager ends a session after this many idle minutes."
+  type        = number
+  default     = 20
 }
 
 variable "session_log_group_name" {
@@ -33,8 +34,9 @@ variable "access_tag_key" {
 }
 
 variable "access_tag_value" {
-  type    = string
-  default = "true"
+  description = "Value of access_tag_key an instance must carry for start-session to be allowed."
+  type        = string
+  default     = "true"
 }
 
 variable "named_users" {

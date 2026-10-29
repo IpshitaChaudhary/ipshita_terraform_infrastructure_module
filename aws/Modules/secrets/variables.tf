@@ -1,5 +1,6 @@
 variable "name_prefix" {
-  type = string
+  description = "Prefix for the IAM policy that grants read access to the secret."
+  type        = string
 }
 
 variable "execution_role_name" {

@@ -4,8 +4,9 @@ variable "name_prefix" {
 }
 
 variable "fifo_queue" {
-  type    = bool
-  default = false
+  description = "Create FIFO queues (main and DLQ) for strict ordering and deduplication."
+  type        = bool
+  default     = false
 }
 
 variable "visibility_timeout_seconds" {
@@ -15,8 +16,9 @@ variable "visibility_timeout_seconds" {
 }
 
 variable "message_retention_seconds" {
-  type    = number
-  default = 345600 # 4 days
+  description = "How long an unconsumed message stays in the main queue (default 4 days, max 14)."
+  type        = number
+  default     = 345600 # 4 days
 }
 
 variable "enable_dlq" {

@@ -1,9 +1,11 @@
 output "bucket_id" {
-  value = aws_s3_bucket.this.id
+  description = "Name of the bucket."
+  value       = aws_s3_bucket.this.id
 }
 
 output "bucket_arn" {
-  value = aws_s3_bucket.this.arn
+  description = "ARN of the bucket, for IAM and bucket policies."
+  value       = aws_s3_bucket.this.arn
 }
 
 output "bucket_regional_domain_name" {

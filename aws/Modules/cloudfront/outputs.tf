@@ -1,9 +1,11 @@
 output "distribution_id" {
-  value = aws_cloudfront_distribution.this.id
+  description = "ID of the distribution, needed for cache invalidations."
+  value       = aws_cloudfront_distribution.this.id
 }
 
 output "distribution_domain_name" {
-  value = aws_cloudfront_distribution.this.domain_name
+  description = "*.cloudfront.net domain name - the alias target for Route 53."
+  value       = aws_cloudfront_distribution.this.domain_name
 }
 
 output "distribution_hosted_zone_id" {

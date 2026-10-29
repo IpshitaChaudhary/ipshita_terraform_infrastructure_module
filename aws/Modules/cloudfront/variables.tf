@@ -31,8 +31,9 @@ variable "static_asset_path_patterns" {
 }
 
 variable "price_class" {
-  type    = string
-  default = "PriceClass_200"
+  description = "Edge locations to serve from. PriceClass_200 covers Asia, Europe and the Americas without the most expensive regions."
+  type        = string
+  default     = "PriceClass_200"
 }
 
 variable "enable_html_cache" {

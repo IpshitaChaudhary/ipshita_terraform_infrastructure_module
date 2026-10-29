@@ -1,9 +1,11 @@
 output "task_execution_role_arn" {
-  value = aws_iam_role.task_execution.arn
+  description = "ARN of the ECS task execution role (image pull, logs, secret reads at startup)."
+  value       = aws_iam_role.task_execution.arn
 }
 
 output "task_role_arn" {
-  value = aws_iam_role.task.arn
+  description = "ARN of the role application code assumes inside the task."
+  value       = aws_iam_role.task.arn
 }
 
 output "human_access_group_arns" {

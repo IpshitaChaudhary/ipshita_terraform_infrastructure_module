@@ -7,8 +7,9 @@
 # -----------------------------------------------------------------------------
 
 variable "aws_region" {
-  type    = string
-  default = "us-east-2"
+  description = "Region everything is deployed to."
+  type        = string
+  default     = "us-east-2"
 }
 
 variable "aws_profile" {
@@ -40,8 +41,9 @@ variable "acm_certificate_arn" {
 }
 
 variable "https_listener_ssl_policy" {
-  type    = string
-  default = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+  description = "TLS policy for the ALB's HTTPS listener (TLS 1.3 + post-quantum key exchange by default)."
+  type        = string
+  default     = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
 }
 
 # --- Existing IAM roles (referenced by name via data source, not managed) ---
@@ -67,23 +69,27 @@ variable "name_prefix" {
 }
 
 variable "ecs_cluster_name" {
-  type    = string
-  default = "myapp-dev-cluster"
+  description = "Name of the ECS cluster."
+  type        = string
+  default     = "myapp-dev-cluster"
 }
 
 variable "alb_name" {
-  type    = string
-  default = "myapp-dev-alb"
+  description = "Name of the Application Load Balancer."
+  type        = string
+  default     = "myapp-dev-alb"
 }
 
 variable "backend_task_family" {
-  type    = string
-  default = "myapp-dev-backend"
+  description = "Task definition family for the backend service."
+  type        = string
+  default     = "myapp-dev-backend"
 }
 
 variable "frontend_task_family" {
-  type    = string
-  default = "myapp-dev-frontend"
+  description = "Task definition family for the frontend service."
+  type        = string
+  default     = "myapp-dev-frontend"
 }
 
 # --- EC2 capacity layer ---
@@ -101,18 +107,21 @@ variable "key_name" {
 }
 
 variable "capacity_asg_min_size" {
-  type    = number
-  default = 1
+  description = "Minimum EC2 container instances."
+  type        = number
+  default     = 1
 }
 
 variable "capacity_asg_max_size" {
-  type    = number
-  default = 2
+  description = "Maximum EC2 container instances."
+  type        = number
+  default     = 2
 }
 
 variable "capacity_asg_desired_capacity" {
-  type    = number
-  default = 1
+  description = "Initial EC2 container instances."
+  type        = number
+  default     = 1
 }
 
 # --- Existing ECR repositories (referenced by name, not managed) ---
@@ -132,8 +141,9 @@ variable "frontend_repository_name" {
 # --- Backend service ---
 
 variable "backend_container_name" {
-  type    = string
-  default = "backend"
+  description = "Container name in the backend task definition."
+  type        = string
+  default     = "backend"
 }
 
 variable "backend_container_image" {
@@ -142,8 +152,9 @@ variable "backend_container_image" {
 }
 
 variable "backend_container_port" {
-  type    = number
-  default = 3000
+  description = "Port the backend container listens on."
+  type        = number
+  default     = 3000
 }
 
 variable "backend_memory_reservation" {
@@ -153,8 +164,9 @@ variable "backend_memory_reservation" {
 }
 
 variable "backend_desired_count" {
-  type    = number
-  default = 0
+  description = "Initial backend task count. 0 by default so the first apply doesn't start tasks before an image has been pushed."
+  type        = number
+  default     = 0
 }
 
 variable "backend_host_header" {
@@ -191,8 +203,9 @@ variable "backend_container_environment" {
 # --- Frontend service ---
 
 variable "frontend_container_name" {
-  type    = string
-  default = "frontend"
+  description = "Container name in the frontend task definition."
+  type        = string
+  default     = "frontend"
 }
 
 variable "frontend_container_image" {
@@ -201,18 +214,21 @@ variable "frontend_container_image" {
 }
 
 variable "frontend_container_port" {
-  type    = number
-  default = 4200
+  description = "Port the frontend container listens on."
+  type        = number
+  default     = 4200
 }
 
 variable "frontend_memory_reservation" {
-  type    = number
-  default = 768
+  description = "Soft memory limit (MiB) for the frontend container - what ECS reserves when placing it."
+  type        = number
+  default     = 768
 }
 
 variable "frontend_desired_count" {
-  type    = number
-  default = 0
+  description = "Initial frontend task count. 0 by default so the first apply doesn't start tasks before an image has been pushed."
+  type        = number
+  default     = 0
 }
 
 variable "frontend_host_header" {

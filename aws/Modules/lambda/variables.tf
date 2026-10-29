@@ -10,21 +10,25 @@ variable "extra_execution_policy_arns" {
 }
 
 variable "handler" {
-  type = string
+  description = "Entry point in <file>.<exported function> form (e.g. \"index.handler\")."
+  type        = string
 }
 
 variable "runtime" {
-  type = string
+  description = "Lambda runtime identifier (e.g. \"nodejs22.x\", \"python3.13\"). Avoid runtimes past their deprecation date."
+  type        = string
 }
 
 variable "timeout" {
-  type    = number
-  default = 10
+  description = "Maximum run time per invocation, in seconds."
+  type        = number
+  default     = 10
 }
 
 variable "memory_size" {
-  type    = number
-  default = 128
+  description = "Memory in MB. CPU is allocated in proportion, so raising it can also make CPU-bound code faster."
+  type        = number
+  default     = 128
 }
 
 variable "filename" {
@@ -40,13 +44,15 @@ variable "s3_bucket" {
 }
 
 variable "s3_key" {
-  type    = string
-  default = null
+  description = "Object key of the deployment package zip in s3_bucket. Used together with s3_bucket."
+  type        = string
+  default     = null
 }
 
 variable "environment_variables" {
-  type    = map(string)
-  default = {}
+  description = "Plain environment variables for the function. Keep secrets in Secrets Manager or SSM."
+  type        = map(string)
+  default     = {}
 }
 
 variable "log_retention_days" {

@@ -9,8 +9,9 @@ variable "image_identifier" {
 }
 
 variable "port" {
-  type    = number
-  default = 8080
+  description = "Port the container listens on. App Runner routes HTTPS traffic to it."
+  type        = number
+  default     = 8080
 }
 
 variable "cpu" {
@@ -26,8 +27,9 @@ variable "memory" {
 }
 
 variable "environment_variables" {
-  type    = map(string)
-  default = {}
+  description = "Plain (non-secret) environment variables for the container. Put secrets in Secrets Manager, not here."
+  type        = map(string)
+  default     = {}
 }
 
 variable "extra_instance_policy_arns" {
@@ -43,13 +45,15 @@ variable "vpc_connector_subnet_ids" {
 }
 
 variable "vpc_connector_security_group_ids" {
-  type    = list(string)
-  default = []
+  description = "Security groups for the VPC connector. Only used when the service needs to reach private resources in a VPC."
+  type        = list(string)
+  default     = []
 }
 
 variable "autoscaling_min_size" {
-  type    = number
-  default = 1
+  description = "Minimum number of provisioned instances kept warm."
+  type        = number
+  default     = 1
 }
 
 variable "autoscaling_max_size" {
@@ -59,16 +63,19 @@ variable "autoscaling_max_size" {
 }
 
 variable "autoscaling_max_concurrency" {
-  type    = number
-  default = 100
+  description = "Concurrent requests one instance handles before App Runner scales out."
+  type        = number
+  default     = 100
 }
 
 variable "health_check_protocol" {
-  type    = string
-  default = "HTTP"
+  description = "Health check protocol: \"HTTP\" (checks health_check_path) or \"TCP\" (port open only)."
+  type        = string
+  default     = "HTTP"
 }
 
 variable "health_check_path" {
-  type    = string
-  default = "/health"
+  description = "Path probed when health_check_protocol is HTTP. Should return 200 without touching downstream dependencies."
+  type        = string
+  default     = "/health"
 }

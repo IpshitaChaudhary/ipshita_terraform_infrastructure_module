@@ -25,18 +25,21 @@ variable "engine" {
 }
 
 variable "engine_version" {
-  type    = string
-  default = "8.0"
+  description = "Valkey engine version."
+  type        = string
+  default     = "8.0"
 }
 
 variable "node_type" {
-  type    = string
-  default = "cache.t4g.micro"
+  description = "Cache node instance type. Graviton (t4g/m7g/r7g) nodes are the cheapest per GB."
+  type        = string
+  default     = "cache.t4g.micro"
 }
 
 variable "port" {
-  type    = number
-  default = 6379
+  description = "Port the cache listens on. Also the only port opened in its security group."
+  type        = number
+  default     = 6379
 }
 
 variable "num_cache_clusters" {

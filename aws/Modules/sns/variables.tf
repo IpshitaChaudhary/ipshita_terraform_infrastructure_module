@@ -4,8 +4,9 @@ variable "name_prefix" {
 }
 
 variable "fifo_topic" {
-  type    = bool
-  default = false
+  description = "Create a FIFO topic (strict ordering, exactly-once). FIFO topics can only deliver to FIFO SQS queues."
+  type        = bool
+  default     = false
 }
 
 variable "kms_master_key_id" {

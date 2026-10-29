@@ -1,41 +1,51 @@
 variable "aws_region" {
-  type = string
+  description = "Region for the awslogs log driver."
+  type        = string
 }
 
 variable "family" {
-  type = string
+  description = "Task definition family. Also names the CloudWatch log group (/ecs/<family>)."
+  type        = string
 }
 
 variable "service_name" {
-  type = string
+  description = "Name of the ECS service. Also used in auto scaling resource IDs and policy names."
+  type        = string
 }
 
 variable "cluster_id" {
-  type = string
+  description = "ID of the ECS cluster to run the service in (capacity module output)."
+  type        = string
 }
 
 variable "capacity_provider_name" {
-  type = string
+  description = "Capacity provider the service places tasks on (capacity module output)."
+  type        = string
 }
 
 variable "execution_role_arn" {
-  type = string
+  description = "Role ECS itself uses to pull the image and read secrets at task start."
+  type        = string
 }
 
 variable "task_role_arn" {
-  type = string
+  description = "Role the application code assumes at runtime for AWS API calls."
+  type        = string
 }
 
 variable "container_name" {
-  type = string
+  description = "Name of the container in the task definition. The load balancer registers targets by this name."
+  type        = string
 }
 
 variable "container_image" {
-  type = string
+  description = "Initial image (repository URL + tag). Later deploys change it through CI/CD, which Terraform then ignores."
+  type        = string
 }
 
 variable "container_port" {
-  type = number
+  description = "Port the container listens on, registered with the target group."
+  type        = number
 }
 
 variable "memory_reservation" {
@@ -56,11 +66,13 @@ variable "container_secrets" {
 }
 
 variable "target_group_arn" {
-  type = string
+  description = "Target group the service registers its tasks with."
+  type        = string
 }
 
 variable "desired_count" {
-  type = number
+  description = "Initial number of tasks. Auto scaling owns the count after the first apply."
+  type        = number
 }
 
 variable "enable_execute_command" {
@@ -81,11 +93,13 @@ variable "cluster_name" {
 }
 
 variable "autoscaling_min_capacity" {
-  type    = number
-  default = 2
+  description = "Lowest task count auto scaling may scale in to. Keep at 2+ for availability during deploys."
+  type        = number
+  default     = 2
 }
 
 variable "autoscaling_max_capacity" {
-  type    = number
-  default = 8
+  description = "Highest task count auto scaling may scale out to."
+  type        = number
+  default     = 8
 }

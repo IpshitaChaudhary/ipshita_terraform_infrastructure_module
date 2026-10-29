@@ -1,4 +1,6 @@
-# tflint config shared by every module (run with `tflint --recursive` from the repo root).
+# tflint config shared by every module. Run from the repo root with:
+#   tflint --recursive --config "$(pwd)/.tflint.hcl"
+# (--recursive otherwise looks for a config inside each module and ignores this one).
 # `terraform validate` only proves the HCL parses; tflint catches the things validate
 # lets through: unused variables, missing type/description, deprecated syntax, and
 # AWS-specific mistakes like invalid instance types.
@@ -18,7 +20,7 @@ plugin "aws" {
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 
-# Every variable in this repo already has a description; enforce it so new ones do too.
+# Every input and output carries a description - enforce it so new ones do too.
 rule "terraform_documented_variables" {
   enabled = true
 }
