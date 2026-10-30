@@ -2,6 +2,13 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-10-30
+
+- `eks`: Kubernetes Secrets are now envelope-encrypted with KMS by default. New inputs `secrets_kms_key_arn` (bring your own key; null = module creates one with rotation and a scoped key policy) and `secrets_kms_deletion_window_days`; new output `secrets_kms_key_arn`. EKS can't turn Secrets encryption off once enabled, so applying this to an existing cluster is one-way.
+- `.checkov.yaml`: removed the last tracked gap (`CKV_AWS_58`) - the check now passes, so a regression fails CI.
+- `README.md`: documented the eks encryption inputs.
+- `RUNBOOK.md`: new "Decommissioning safely" section - a pre-delete checklist and the gotchas behind it (AMIs leaking root volumes, cross-referencing security groups, ALB deletion dropping its WAF association silently, Lambda@Edge replica delay, shared bucket policies).
+
 ## 2026-10-29
 
 - CI: added **tflint** (recommended preset + AWS ruleset, `.tflint.hcl`) and a **Checkov** security scan (`.checkov.yaml`). Checkov fails the build on any finding not listed in `.checkov.yaml`, and every listed one carries the reason it is accepted.
