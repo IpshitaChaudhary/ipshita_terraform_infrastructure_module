@@ -153,3 +153,31 @@ Take the `alb_dns_name` output and point your domain(s) at it (as a DNS alias/CN
 **Should a person's private key live on the bastion so they can hop onward from there?**
 - No. Anyone with sudo on the bastion can copy it and log into other servers as that person, which breaks per-person accountability, and a compromised bastion hands over every key stored on it. Keep keys on the laptop and use `ssh -J bastion target` (or a `ProxyJump` entry in `~/.ssh/config`); agent forwarding (`ssh -A`) is the fallback, with the trade-off that a root user on the bastion can use the forwarded agent while you're connected.
 - The same applies to a shared "master" key parked in the default user's home on the bastion: it's the pattern per-person users are meant to replace.
+
+## Decommissioning safely
+
+Lessons from cleaning up a dev account after moving its workload from EC2 to ECS. "Attached to nothing" is where the check starts, not where it ends.
+
+**Before deleting anything that looks unused, check all of these - not just the obvious one:**
+- [ ] Usage over 90 days, not 7 or 30: CloudWatch request/invocation/message counts, an AMI's `LastLaunchedTime`, an IAM role's `RoleLastUsed`, and write events in CloudTrail event history (which only keeps 90 days - anything older needs your own trail).
+- [ ] Every way it can be referenced: other security groups' rules, *every version* of every launch template (not only `$Latest`), ECS task definitions, Lambda VPC configs and event source mappings, EventBridge targets, alarm actions, CodeStar notification rules, DNS records in every hosted zone and account, and the repos/docs.
+- [ ] Who owns it: if a CloudFormation or CDK stack lists it as a resource, delete the stack as a unit (or leave it alone) - deleting a piece directly leaves the stack drifted and its next deploy broken.
+- [ ] Save the config first (`describe-*`/`get-*` JSON, Lambda code zip, IAM inline + attached policies, CloudFormation template), so "we needed that" means recreate, not reverse-engineer.
+
+**Disks keep piling up even though the Auto Scaling group is at 0:**
+- Look at the AMI, not the ASG. An image baked with `DeleteOnTermination=false` on its root volume leaves a disk behind every time an instance from it terminates, and a launch template that doesn't set `block_device_mappings` inherits that. One churning ASG left 178 orphaned volumes this way.
+- Fix it in the launch template (`capacity/` sets `delete_on_termination = true` explicitly), then delete the leftovers.
+
+**A security group "can't be deleted" although nothing uses it:**
+- Another group still references it in a rule (`DependencyViolation`). If both groups are being retired, revoke the cross-referencing rules first, then delete both. If the referencing group is still in use, the unused one stays until that rule is removed on purpose.
+- A group is only unused if no network interface has it right now - re-check immediately before deleting; servers launched since your scan count.
+
+**A load balancer with deletion protection won't delete, or deleting it dropped something else:**
+- Turn `deletion_protection.enabled` off first; it's an attribute, not part of the delete call.
+- Deleting an ALB silently removes its WAF web ACL association - no `DisassociateWebACL` event appears in CloudTrail. To find out later whether a web ACL ever protected anything, look at its `AllowedRequests`/`BlockedRequests` metrics (kept 15 months), not the event history.
+
+**A Lambda@Edge function won't delete after its CloudFront distribution is gone:**
+- CloudFront keeps replicas of the function in edge regions for a few hours after the association is removed. Wait (often until the next day), then delete. Its log groups live in many regions as `/aws/lambda/us-east-1.<function-name>` - clean those up per region too.
+
+**Prefer deleting the distribution-specific pieces with the distribution:**
+- An S3 bucket policy shared by several distributions usually has one statement per distribution (`AWS:SourceArn` condition). Remove only the statement for the one you deleted, and confirm the live distributions' statements are untouched.
