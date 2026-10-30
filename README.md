@@ -117,6 +117,8 @@ Two roles for ECS (execution role for pulling images/writing logs/resolving secr
 
 The root module (and everything documented below it) runs on ECS with EC2 capacity. `eks/` is a separate, independent module for teams that would rather run the same kind of workload on Kubernetes instead - it stands up an EKS cluster, a managed node group, and an OIDC provider so pods can assume IAM roles directly (IRSA) instead of inheriting whatever the node's IAM role can do. It takes an existing VPC/subnets as input (e.g. from the `vpc/` module above) and doesn't touch ECS at all - pick one compute model or the other, this module doesn't assume you're using both.
 
+Kubernetes Secrets are envelope-encrypted with KMS by default. Leave `secrets_kms_key_arn` unset and the module creates a dedicated key (yearly rotation, 30-day deletion window, key policy limited to account admin plus the cluster role's encrypt/decrypt calls); pass an ARN to use a key you already manage. EKS can't switch this off again once it's on, so adding it to an existing cluster is one-way - plan it, don't discover it.
+
 ### `route53/` - one DNS record, in a zone you already own
 
 Looks up an existing hosted zone by name and creates a single alias record pointed at whatever you give it (an ALB's `dns_name`/`zone_id`, a CloudFront distribution's `domain_name`/fixed zone ID, etc). Like `ecr/`, the zone itself is only ever read via a `data` source - a shared, customer-facing hosted zone isn't something a reusable module should be able to create, recreate, or delete.

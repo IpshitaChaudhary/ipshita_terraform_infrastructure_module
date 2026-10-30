@@ -49,6 +49,3 @@ skip-check:
   - CKV_AWS_310  # cloudfront: origin failover needs a second origin
   - CKV_AWS_374  # cloudfront: geo restriction is a business decision
   - CKV_AWS_150  # loadbalancer: deletion protection would block `terraform destroy` of test environments
-
-  # --- Known gap, tracked -----------------------------------------------------
-  - CKV_AWS_58   # eks: envelope encryption of Secrets needs a KMS key input - not built yet
