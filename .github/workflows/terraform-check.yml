@@ -7,12 +7,10 @@ on:
       - ".tflint.hcl"
       - ".checkov.yaml"
       - ".github/workflows/terraform-check.yml"
+  # Every PR runs the checks, even docs-only ones: main is protected and
+  # requires the ci-passed job below, so a PR that skipped the workflow could
+  # never be merged.
   pull_request:
-    paths:
-      - "**/*.tf"
-      - ".tflint.hcl"
-      - ".checkov.yaml"
-      - ".github/workflows/terraform-check.yml"
 
 jobs:
   check-root:
@@ -125,3 +123,16 @@ jobs:
 
       - name: terraform validate
         run: terraform validate
+
+  # Single required status check for branch protection on main. Waits for every
+  # job above (including each module in the matrix) and fails if any of them
+  # didn't succeed, so protection doesn't need updating when a module is added.
+  ci-passed:
+    if: always()
+    needs: [check-root, check-modules, tflint, checkov]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks succeeded
+        run: |
+          echo '${{ toJSON(needs) }}'
+          [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "false" ]
