@@ -32,6 +32,16 @@ resource "aws_eks_cluster" "this" {
     endpoint_private_access = var.endpoint_private_access
   }
 
+  # Envelope-encrypt Kubernetes Secrets with KMS (see kms.tf). Note EKS cannot
+  # turn this off again once enabled - removing the block forces a new cluster.
+  encryption_config {
+    resources = ["secrets"]
+
+    provider {
+      key_arn = local.secrets_kms_key_arn
+    }
+  }
+
   # The cluster role's policy attachment must exist before EKS tries to
   # assume it to create the control plane.
   depends_on = [aws_iam_role_policy_attachment.cluster_policy]

@@ -60,3 +60,20 @@ variable "node_max_size" {
   type        = number
   default     = 4
 }
+
+variable "secrets_kms_key_arn" {
+  description = "ARN of an existing KMS key used to envelope-encrypt Kubernetes Secrets. Leave null to have the module create a dedicated key with rotation enabled. The key's policy must let the cluster role use it."
+  type        = string
+  default     = null
+}
+
+variable "secrets_kms_deletion_window_days" {
+  description = "Waiting period (7-30 days) before the module-created Secrets key is actually deleted after a destroy. Ignored when secrets_kms_key_arn is set."
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = var.secrets_kms_deletion_window_days >= 7 && var.secrets_kms_deletion_window_days <= 30
+    error_message = "secrets_kms_deletion_window_days must be between 7 and 30."
+  }
+}

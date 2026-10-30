@@ -37,3 +37,8 @@ output "node_group_name" {
   description = "Name of the managed node group."
   value       = aws_eks_node_group.this.node_group_name
 }
+
+output "secrets_kms_key_arn" {
+  description = "KMS key used to envelope-encrypt Kubernetes Secrets (module-created or the one passed in)."
+  value       = local.secrets_kms_key_arn
+}
