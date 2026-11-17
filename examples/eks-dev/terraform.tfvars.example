@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is git-ignored.
+
+aws_region          = "us-east-1"
+aws_profile         = "my-dev-profile"
+allowed_account_ids = ["111111111111"]
+
+name_prefix = "myapp-dev"
+
+vpc_cidr             = "10.10.0.0/16"
+azs                  = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.10.0.0/20", "10.10.16.0/20"]
+private_subnet_cidrs = ["10.10.128.0/19", "10.10.160.0/19"]
+
+kubernetes_version  = "1.31"
+node_instance_types = ["t3.medium", "t3a.medium"]
+node_desired_size   = 1
+node_max_size       = 3
