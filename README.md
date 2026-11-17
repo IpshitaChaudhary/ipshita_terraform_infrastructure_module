@@ -105,9 +105,13 @@ aws/
     ├── app-runner/     - service with separate access/instance roles and optional private VPC egress
     ├── elasticache/    - Valkey/Redis replication group, encrypted, reachable only from allowlisted security groups
     └── ssm-access/     - per-person server access: Session Manager Run As, tag-scoped sessions, named users + sudo recording
+
+examples/
+├── eks-dev/            - VPC + EKS dev environment (2 AZs, SPOT, public API)
+└── eks-prod/           - VPC + EKS prod environment (3 AZs, ON_DEMAND, private API)
 ```
 
-> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, `app-runner/`, `elasticache/`, and `ssm-access/` are standalone modules, not yet wired into the root `main.tf`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, but plugging their outputs into the root module's inputs (or into each other) is a manual step for now.
+> **Note:** `vpc/`, `iam/`, `eks/`, `route53/`, `cloudfront/`, `sqs/`, `sns/`, `s3/`, `lambda/`, `app-runner/`, `elasticache/`, and `ssm-access/` are standalone modules, not yet wired into the root `main.tf`. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how they combine into real reference patterns. The root module still takes an existing VPC/subnets/IAM roles as input variables (see Prerequisites below) - these modules exist so you can create infrastructure like that with Terraform too, instead of by hand, and [`examples/`](./examples) has complete dev and prod environments that wire `vpc` into `eks`, validated in CI on every pull request.
 
 ### `iam/` - ECS task roles, plus opt-in human access groups
 
@@ -161,6 +165,7 @@ Built from replacing shared server logins on a real platform. By default every S
 
 - [`RESOURCES.md`](./RESOURCES.md) - the concrete AWS resource types this module creates, grouped by submodule. Useful for a cost/blast-radius review before pointing this at a real account.
 - [`RUNBOOK.md`](./RUNBOOK.md) - operational doc: pre-deploy checklist, deploy procedure, rollback, and troubleshooting.
+- [`examples/`](./examples) - ready-to-apply dev and prod environments (VPC + EKS) composed from the modules, with a partial S3 backend and an account guard.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) - 5 reference patterns showing how the standalone `vpc`/`iam`/`eks`/`route53`/`cloudfront`/`sqs`/`sns`/`s3`/`lambda`/`app-runner`/`elasticache` modules combine in practice.
 
 ### Prerequisites

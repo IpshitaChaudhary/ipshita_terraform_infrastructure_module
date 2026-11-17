@@ -2,6 +2,15 @@
 
 All notable changes to this repository, in the order they happened.
 
+## 2026-11-17
+
+- New `examples/` folder: complete live environments composed from the module library.
+  - `eks-dev`: VPC + EKS across 2 AZs, single NAT, public API endpoint, SPOT nodes, 7-day KMS deletion window.
+  - `eks-prod`: VPC + EKS across 3 AZs (enforced by validation), private-only API endpoint, ON_DEMAND nodes with one per AZ minimum, 30-day KMS deletion window.
+  - Both use a partial S3 backend (`backend.hcl`, S3-native locking), `allowed_account_ids` so the provider refuses the wrong account, and provider `default_tags`.
+- CI: new `check-examples` job (fmt, init, validate per example), required by `ci-passed`. Catches a module change that breaks its callers.
+- `.gitignore`: `backend.hcl`.
+
 ## 2026-10-30
 
 - `eks`: Kubernetes Secrets are now envelope-encrypted with KMS by default. New inputs `secrets_kms_key_arn` (bring your own key; null = module creates one with rotation and a scoped key policy) and `secrets_kms_deletion_window_days`; new output `secrets_kms_key_arn`. EKS can't turn Secrets encryption off once enabled, so applying this to an existing cluster is one-way.

@@ -1,0 +1,9 @@
+# Copy to backend.hcl, then: terraform init -backend-config=backend.hcl
+# The bucket must already exist (versioned, encrypted, public access blocked -
+# the s3 module in this repo creates one like that).
+
+bucket       = "my-terraform-state-111111111111"
+key          = "examples/eks-dev/terraform.tfstate"
+region       = "us-east-1"
+encrypt      = true
+use_lockfile = true # S3-native locking (Terraform >= 1.10), no DynamoDB table needed

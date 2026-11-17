@@ -6,6 +6,7 @@ on:
       - "**/*.tf"
       - ".tflint.hcl"
       - ".checkov.yaml"
+      - "examples/**"
       - ".github/workflows/terraform-check.yml"
   # Every PR runs the checks, even docs-only ones: main is protected and
   # requires the ci-passed job below, so a PR that skipped the workflow could
@@ -124,12 +125,44 @@ jobs:
       - name: terraform validate
         run: terraform validate
 
+  # The examples call the modules the way a real project would, so this catches
+  # interface drift (a renamed or removed module input/output) that validating
+  # each module on its own can't see.
+  check-examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - eks-dev
+          - eks-prod
+    defaults:
+      run:
+        working-directory: examples/${{ matrix.example }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: terraform fmt (check only, no rewrite)
+        run: terraform fmt -check -recursive
+
+      # -backend=false: the S3 backend is a partial config filled from
+      # backend.hcl, which only exists on a real operator's machine.
+      - name: terraform init (no backend)
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        run: terraform validate
+
   # Single required status check for branch protection on main. Waits for every
   # job above (including each module in the matrix) and fails if any of them
   # didn't succeed, so protection doesn't need updating when a module is added.
   ci-passed:
     if: always()
-    needs: [check-root, check-modules, tflint, checkov]
+    needs: [check-root, check-modules, check-examples, tflint, checkov]
     runs-on: ubuntu-latest
     steps:
       - name: All checks succeeded
